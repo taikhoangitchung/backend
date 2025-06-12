@@ -34,4 +34,7 @@ public class Question {
     @ManyToOne
     @JoinColumn(nullable = false)
     private User user;
+
+    @ManyToMany(mappedBy = "questions")
+    private List<Exam> exams;
 }

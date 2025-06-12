@@ -2,11 +2,15 @@ package app.repository;
 
 import app.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 //import quiz.entity.Authority;
 
 import java.util.List;
+
+import java.util.Optional;
+
 
 public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.active = false")
@@ -17,15 +21,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     User findByUsername(String username);
 
-    User findByEmail(String email);
-
-    User findByPhone(String phone);
+    Optional<User> findByEmail(String email);
 
     boolean existsByUsername(String username);
 
-    boolean existsByEmailAndIdNot(String email, Long id);
+    boolean existsByEmail(String email);
 
-    boolean existsByPhoneAndIdNot(String phone, Long id);
+    boolean existsByEmailAndIdNot(String email, Long id);
 
 //    List<User> findByActiveTrue();
 

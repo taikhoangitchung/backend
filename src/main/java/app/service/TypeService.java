@@ -1,5 +1,6 @@
 package app.service;
 
+import app.dto.AddTypeRequest;
 import app.entity.Type;
 import app.repository.TypeRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,12 +13,12 @@ import java.util.List;
 public class TypeService {
     private final TypeRepository typeRepository;
 
-    public void addType(String typeName) {
-        if (typeRepository.existsByName(typeName)) {
+    public void addType(AddTypeRequest request) {
+        if (typeRepository.existsByName(request.getName())) {
             throw new IllegalArgumentException("Type already exists.");
         }
         Type type = new Type();
-        type.setName(typeName);
+        type.setName(request.getName());
         typeRepository.save(type);
     }
     public List<Type> getAllTypes() {

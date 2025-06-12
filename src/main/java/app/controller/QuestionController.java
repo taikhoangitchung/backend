@@ -1,6 +1,7 @@
 package app.controller;
 
 import app.dto.AddQuestionRequest;
+import app.dto.EditQuestionRequest;
 import app.service.QuestionService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +21,19 @@ public class QuestionController {
         return ResponseEntity.status(HttpStatus.OK).body(questionService.findByUserId(userId));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getQuestionById(@PathVariable long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(questionService.findById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editQuestion(@RequestBody EditQuestionRequest request, @PathVariable long id) {
+        questionService.update(request,id);
+        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("question.update.success"));
+    }
+
     @PostMapping
-    public ResponseEntity<?> createQuestion(@RequestBody AddQuestionRequest request ) {
+    public ResponseEntity<?> createQuestion(@RequestBody AddQuestionRequest request) {
         questionService.addQuestion(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("question.create.success"));
     }

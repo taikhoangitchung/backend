@@ -1,5 +1,6 @@
 package app.service;
 
+import app.dto.AddDifficultyRequest;
 import app.entity.Difficulty;
 import app.repository.DifficultyRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,12 +13,12 @@ import java.util.List;
 public class DifficultyService {
     private final DifficultyRepository difficultyRepository;
 
-    public void addDifficulty(String difficultyName) {
-        if (difficultyRepository.existsByName(difficultyName)) {
+    public void addDifficulty(AddDifficultyRequest request) {
+        if (difficultyRepository.existsByName(request.getName())) {
             throw new IllegalArgumentException("Difficulty already exists");
         }
         Difficulty difficulty = new Difficulty();
-        difficulty.setName(difficultyName);
+        difficulty.setName(request.getName());
         difficultyRepository.save(difficulty);
     }
 

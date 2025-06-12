@@ -18,20 +18,27 @@ public class CategoryController {
     private final CategoryService categoryService;
     private final MessageHelper messageHelper;
 
+    @PostMapping
+    public ResponseEntity<?> addCategory(@Valid @RequestBody AddCategoryRequest request,
+                                         BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
+        }
+        categoryService.addCategory(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("category.create.success"));
+    }
 
-     @PostMapping
-     public ResponseEntity<?> addCategory(@Valid @RequestBody AddCategoryRequest request,
-                                             BindingResult bindingResult) {
-         if (bindingResult.hasErrors()) {
-             return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
-         }
-         categoryService.addCategory(request.getName());
-         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("category.create.success"));
-     }
+    @GetMapping
+    public ResponseEntity<?> getAll() {
+        return ResponseEntity.ok().body(categoryService.getAllCategories());
+    }
 
-     @GetMapping
-    public ResponseEntity<?> getAll(){
-         return ResponseEntity.ok().body(categoryService.getAllCategories());
-     }
-
+//    @DeleteMapping("{id}")
+//    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+//        if (id == null || id <= 0) {
+//            return ResponseEntity.badRequest().body(messageHelper.get("category.not.found"));
+//        }
+//        categoryService.deleteCategory(id);
+//        return ResponseEntity.ok().body(messageHelper.get("category.delete.success"));
+//    }
 }

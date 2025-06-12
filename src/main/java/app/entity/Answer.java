@@ -1,5 +1,6 @@
 package app.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,5 +18,6 @@ public class Answer {
 
     @ManyToOne
     @JoinColumn(nullable = false)
+    @JsonIgnore
     private Question question;
 }

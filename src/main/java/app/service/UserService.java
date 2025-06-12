@@ -11,6 +11,8 @@ import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -72,5 +74,22 @@ public class UserService {
         }
 
         return ResponseEntity.ok(new LoginResponse("Đăng nhập thành công!", true));
+    }
+
+    public ResponseEntity<?> changePassword(String email, String oldPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
+
+        if (!oldPassword.equals(user.getPassword())) {
+            return ResponseEntity.badRequest().body("Mật khẩu cũ không đúng");
+        }
+
+        if (oldPassword.equals(newPassword)) {
+            return ResponseEntity.badRequest().body("Mật khẩu mới không được giống mật khẩu cũ");
+        }
+
+        user.setPassword(newPassword); // Lưu mật khẩu plain text (không khuyến khích)
+        userRepository.save(user);
+        return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
 }

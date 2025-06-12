@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 //import quiz.entity.Authority;
 //import quiz.repository.AuthorityRepository;
 
@@ -38,6 +41,7 @@ public class DatabaseStarter implements CommandLineRunner {
             admin.setUsername(adminUsername);
             admin.setEmail(adminEmail);
             admin.setPassword(adminPassword);
+            admin.setCreateAt(LocalDateTime.now());
 //            Set<Authority> authorities = new HashSet<>();
 //            authorities.add(authorityRepository.findByRole(Authority.Role.ADMIN));
 //            admin.setAuthorities(authorities);

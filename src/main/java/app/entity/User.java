@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
+
 @Entity
 @Setter
 @Getter
@@ -19,11 +23,17 @@ public class User {
     private String password;
 
     @Column(nullable = false)
-    private Integer active = 1;
+    private boolean active = true;
 
     @Column(unique = true)
     private String email;
 
 //    @ManyToMany(fetch = FetchType.EAGER)
 //    private Set<Authority> authorities = new HashSet<>();
+
+    @Column(nullable = false)
+    private LocalDateTime createAt;
+
+    @Column
+    private LocalDateTime lastLogin;
 }

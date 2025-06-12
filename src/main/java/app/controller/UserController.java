@@ -21,6 +21,17 @@ public class UserController {
     private final UserService userService;
     private final MessageHelper messageHelper;
 
+    @GetMapping
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(userService.findAllExceptAdminSortByCreateAt());
+    }
+
+    @GetMapping("/is-admin/{userId}")
+    public ResponseEntity<?> isAdmin(@PathVariable long userId) {
+        return ResponseEntity.ok(userService.isAdmin(userId));
+    }
+
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest,
                                       BindingResult bindingResult) {

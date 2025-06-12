@@ -33,7 +33,7 @@ public class QuestionService {
     }
 
     @Transactional
-    public Optional<Question> findByUserId(long userId) {
-        return questionRepository.findById(userId);
+    public List<Question> findByUserId(long userId) {
+        return questionRepository.findAllByUserId(userId);
     }
 }

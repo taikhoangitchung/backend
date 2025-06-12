@@ -25,5 +25,4 @@ public class QuestionController {
         questionService.addQuestion(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("question.create.success"));
     }
-//
 }

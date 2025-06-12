@@ -1,18 +1,15 @@
 package app.service;
 
 import app.dto.RegisterRequest;
-import app.dto.UserRequest;
 import app.entity.User;
 import app.exception.DuplicateException;
 import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
-//import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-//import quiz.entity.Authority;
-//import quiz.repository.AuthorityRepository;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +29,16 @@ public class UserService  {
 //        authorities.add(authorityRepository.findByRole(Authority.Role.MEMBER));
 //        user.setAuthorities(authorities);
 //        userRepository.save(user);
+    }
+
+    public List<User> findAllExceptAdminSortByCreateAt() {
+        List<User> users = userRepository.findAllExceptAdmin();
+        users.sort(Comparator.comparing(User::getCreateAt).reversed());
+        return users;
+    }
+
+    public boolean isAdmin(long userId) {
+        return userRepository.isAdmin(userId);
     }
 
     private boolean existedUsername(String username) {

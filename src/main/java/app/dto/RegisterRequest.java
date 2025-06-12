@@ -14,10 +14,10 @@ public class RegisterRequest {
 
     @NotBlank(message = "{email.required}")
     @Email(message = "{email.invalid}")
+    @Pattern(regexp = ".+@.+\\..+", message = "Email phải có domain hợp lệ (ví dụ: @gmail.com)")
     private String email;
 
     @NotBlank(message = "{password.required}")
     @Size(min = 6, message = "{password.min}")
-    @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{6,}$", message = "{password.invalid}")
     private String password;
 }

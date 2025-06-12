@@ -9,6 +9,7 @@ import app.mapper.RegisterMapper;
 import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -31,9 +32,14 @@ public class UserService {
     }
 
     public ResponseEntity<String> register(RegisterRequest registerRequest) {
+        // Xử lý validate từ BindingResult (nếu có lỗi từ @Valid)
+        if (registerRequest == null) {
+            return ResponseEntity.badRequest().body("Dữ liệu không hợp lệ");
+        }
+
         String username = registerRequest.getUsername();
         if (username == null || username.trim().isEmpty()) {
-            username = registerRequest.getEmail(); // Sử dụng email nếu username trống
+            username = registerRequest.getEmail(); // Fallback sang email
             registerRequest.setUsername(username);
         }
 
@@ -41,9 +47,14 @@ public class UserService {
             return ResponseEntity.badRequest().body("Email đã tồn tại");
         }
 
-        User user = registerMapper.toEntity(registerRequest);
-        userRepository.save(user);
-        return ResponseEntity.ok("Đăng ký thành công!");
+        try {
+            User user = registerMapper.toEntity(registerRequest);
+            userRepository.save(user);
+            return ResponseEntity.ok("Đăng ký thành công!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký không thành công: " + e.getMessage());
+        }
     }
 
     public ResponseEntity<LoginResponse> login(LoginRequest loginRequest) {

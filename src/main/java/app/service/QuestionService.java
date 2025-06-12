@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -43,5 +44,10 @@ public class QuestionService {
         question.setAnswers(answers);
 
         questionRepository.save(question);
+    }
+
+    @Transactional
+    public Optional<Question> findByUserId(long userId) {
+        return questionRepository.findById(userId);
     }
 }

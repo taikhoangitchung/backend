@@ -6,10 +6,7 @@ import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,6 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class QuestionController {
     private final QuestionService questionService;
     private final MessageHelper messageHelper;
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getAllQuestions(@PathVariable long userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(questionService.findByUserId(userId));
+    }
 
     @PostMapping
     public ResponseEntity<?> createQuestion(@RequestBody AddQuestionRequest request ) {

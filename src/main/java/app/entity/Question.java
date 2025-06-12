@@ -30,4 +30,8 @@ public class Question {
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "question", orphanRemoval = true)
     private List<Answer> answers;
+
+    @ManyToOne
+    @JoinColumn(nullable = false)
+    private User user;
 }

@@ -1,5 +1,6 @@
 package app.controller;
 
+import app.dto.ChangePasswordRequest;
 import app.dto.LoginRequest;
 import app.dto.RegisterRequest;
 import app.service.UserService;
@@ -25,5 +26,10 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         return userService.login(loginRequest);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+        return userService.changePassword(request.getEmail(), request.getOldPassword(), request.getNewPassword());
     }
 }

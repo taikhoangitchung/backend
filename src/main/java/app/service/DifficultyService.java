@@ -5,6 +5,8 @@ import app.repository.DifficultyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class DifficultyService {
@@ -17,5 +19,9 @@ public class DifficultyService {
         Difficulty difficulty = new Difficulty();
         difficulty.setName(difficultyName);
         difficultyRepository.save(difficulty);
+    }
+
+    public List<Difficulty> getAllDifficulties() {
+        return difficultyRepository.findAll();
     }
 }

@@ -5,6 +5,8 @@ import app.repository.TypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TypeService {
@@ -17,5 +19,8 @@ public class TypeService {
         Type type = new Type();
         type.setName(typeName);
         typeRepository.save(type);
+    }
+    public List<Type> getAllTypes() {
+        return typeRepository.findAll();
     }
 }

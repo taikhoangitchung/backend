@@ -1,5 +1,6 @@
 package app.controller;
 
+import app.dto.AddDifficultyRequest;
 import app.service.DifficultyService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;
@@ -18,12 +19,12 @@ public class DifficultyController {
     private final MessageHelper messageHelper;
 
     @PostMapping
-    public ResponseEntity<?> addDifficulty(@Valid @RequestBody String difficultyName,
+    public ResponseEntity<?> addDifficulty(@Valid @RequestBody AddDifficultyRequest request,
                                            BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
         }
-        difficultyService.addDifficulty(difficultyName);
+        difficultyService.addDifficulty(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("difficulty.create.success"));
     }
     @GetMapping

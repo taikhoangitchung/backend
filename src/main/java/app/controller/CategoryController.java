@@ -18,20 +18,19 @@ public class CategoryController {
     private final CategoryService categoryService;
     private final MessageHelper messageHelper;
 
+    @PostMapping
+    public ResponseEntity<?> addCategory(@Valid @RequestBody AddCategoryRequest request,
+                                         BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
+        }
+        categoryService.addCategory(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("category.create.success"));
+    }
 
-     @PostMapping
-     public ResponseEntity<?> addCategory(@Valid @RequestBody AddCategoryRequest request,
-                                             BindingResult bindingResult) {
-         if (bindingResult.hasErrors()) {
-             return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
-         }
-         categoryService.addCategory(request.getName());
-         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("category.create.success"));
-     }
-
-     @GetMapping
-    public ResponseEntity<?> getAll(){
-         return ResponseEntity.ok().body(categoryService.getAllCategories());
-     }
+    @GetMapping
+    public ResponseEntity<?> getAll() {
+        return ResponseEntity.ok().body(categoryService.getAllCategories());
+    }
 
 }

@@ -1,6 +1,7 @@
 package app.service;
 
 import app.dto.AddQuestionRequest;
+import app.dto.EditQuestionRequest;
 import app.entity.*;
 import app.repository.*;
 import app.util.MessageHelper;
@@ -35,5 +36,30 @@ public class QuestionService {
     @Transactional
     public Optional<Question> findByUserId(long userId) {
         return questionRepository.findById(userId);
+    }
+
+    public Question findById(long id) {
+        return questionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageHelper.get("question.notFound")));
+    }
+
+
+    public void update(EditQuestionRequest request, long id) {
+        Question question = questionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageHelper.get("question.notFound")));
+        Category category = categoryRepository.findByName(request.getCategory());
+        Type type = typeRepository.findByName(request.getType());
+        Difficulty difficulty = difficultyRepository.findByName(request.getDifficulty());
+
+        if (category == null || type == null || difficulty == null) {
+            throw new RuntimeException(messageHelper.get("question.update.error"));
+        }
+
+        question.setCategory(category);
+        question.setType(type);
+        question.setDifficulty(difficulty);
+        question.setContent(request.getContent());
+
+        questionRepository.save(question);
     }
 }

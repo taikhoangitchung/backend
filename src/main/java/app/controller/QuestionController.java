@@ -27,7 +27,7 @@ public class QuestionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editQuestionById(@RequestBody EditQuestionRequest request, @PathVariable long id) {
+    public ResponseEntity<?> editQuestion(@RequestBody EditQuestionRequest request, @PathVariable long id) {
         questionService.update(request,id);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("question.update.success"));
     }
@@ -37,5 +37,4 @@ public class QuestionController {
         questionService.addQuestion(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("question.create.success"));
     }
-//
 }

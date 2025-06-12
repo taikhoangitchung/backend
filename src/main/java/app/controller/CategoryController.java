@@ -33,4 +33,12 @@ public class CategoryController {
         return ResponseEntity.ok().body(categoryService.getAllCategories());
     }
 
+//    @DeleteMapping("{id}")
+//    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+//        if (id == null || id <= 0) {
+//            return ResponseEntity.badRequest().body(messageHelper.get("category.not.found"));
+//        }
+//        categoryService.deleteCategory(id);
+//        return ResponseEntity.ok().body(messageHelper.get("category.delete.success"));
+//    }
 }

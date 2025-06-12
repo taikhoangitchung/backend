@@ -1,16 +1,23 @@
 package app.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import jakarta.validation.constraints.*;
 
 @Getter
 @Setter
 public class RegisterRequest {
-    @Pattern(regexp = "^[A-Za-z\\d]{4,20}$", message = "{username.invalid}")
     private String username;
 
-    @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
-            message = "{password.invalid}")
+    @NotBlank(message = "{email.required}")
+    @Email(message = "{email.invalid}")
+    private String email;
+
+    @NotBlank(message = "{password.required}")
+    @Size(min = 6, message = "{password.min}")
+    @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{6,}$", message = "{password.invalid}")
     private String password;
 }

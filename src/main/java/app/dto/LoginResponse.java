@@ -1,13 +1,16 @@
 package app.dto;
 
-
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-@Setter
 @Getter
-@AllArgsConstructor
+@Setter
 public class LoginResponse {
-    private String token;
+    private String message;
+    private boolean success;
+
+    public LoginResponse(String message, boolean success) {
+        this.message = message;
+        this.success = success;
+    }
 }

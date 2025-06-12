@@ -21,13 +21,9 @@ public class User {
     @Column(nullable = false)
     private Integer active = 1;
 
-    private String fullName;
-
     @Column(unique = true)
     private String email;
 
-    @Column(unique = true)
-    private String phone;
 //    @ManyToMany(fetch = FetchType.EAGER)
 //    private Set<Authority> authorities = new HashSet<>();
 }

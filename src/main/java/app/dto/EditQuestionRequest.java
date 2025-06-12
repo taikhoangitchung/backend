@@ -1,8 +1,11 @@
 package app.dto;
 
+import app.entity.Answer;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Setter
 @Getter
@@ -18,4 +21,7 @@ public class EditQuestionRequest {
 
     @NotBlank(message = "{difficulty.required}")
     private String difficulty;
+
+    @NotBlank(message = "{answers.required}")
+    private List<Answer> answers;
 }

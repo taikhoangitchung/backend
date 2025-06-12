@@ -20,4 +20,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> notFoundExceptionHandler(NotFoundException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
+    @ExceptionHandler(QuestionAddedIntoExamException.class)
+    public ResponseEntity<?> forbiddenExceptionHandler(QuestionAddedIntoExamException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    }
 }

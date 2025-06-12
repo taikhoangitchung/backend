@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class QuestionService {
@@ -27,5 +30,10 @@ public class QuestionService {
         question.setDifficulty(difficultyRepository.findByName(request.getDifficulty()));
         question.setContent(request.getContent());
         questionRepository.save(question);
+    }
+
+    @Transactional
+    public Optional<Question> findByUserId(long userId) {
+        return questionRepository.findById(userId);
     }
 }

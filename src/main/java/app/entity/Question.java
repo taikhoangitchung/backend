@@ -33,5 +33,5 @@ public class Question {
 
     @ManyToOne
     @JoinColumn(nullable = false)
-    private User user; // Assuming a User entity exists to track who created the question
+    private User user;
 }

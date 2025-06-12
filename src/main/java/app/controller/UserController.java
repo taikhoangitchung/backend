@@ -1,18 +1,15 @@
 package app.controller;
 
+import app.dto.LoginRequest;
 import app.dto.RegisterRequest;
-import app.dto.UserRequest;
 import app.service.UserService;
-import app.util.BindingHandler;
 import app.util.MessageHelper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-//import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-//import quiz.entity.Authority;
-
 
 @RestController
 @RequiredArgsConstructor
@@ -22,48 +19,26 @@ public class UserController {
     private final MessageHelper messageHelper;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest,
-                                      BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
+    public ResponseEntity<String> processRegister(@Valid @RequestBody RegisterRequest registerRequest, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
         }
-        userService.register(registerRequest);
-        return ResponseEntity.status(201).body(messageHelper.get("register.success"));
+        try {
+            return userService.register(registerRequest);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký không thành công: " + e.getMessage());
+        }
     }
 
-//    @PostMapping("/login")
-//    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-//        return ResponseEntity.ok(userService.login(loginRequest));
-//    }
-
-//    @GetMapping({"", "/{role}"})
-//    @PreAuthorize("hasAuthority('ADMIN')")
-//    public ResponseEntity<?> getUserList(@PathVariable(required = false) String role) {
-//        if (role == null || role.trim().isEmpty()) {
-//            return ResponseEntity.ok(userService.findAll());
-//        }
-//        return ResponseEntity.ok(userService.findByRole(Authority.Role.valueOf(role.toUpperCase())));
-//    }
-
-//    @GetMapping("/stats")
-//    public ResponseEntity<?> getStats() {
-//        return ResponseEntity.ok(userService.getStats());
-//    }
-
-    @PatchMapping
-    public ResponseEntity<?> update(@Valid @RequestBody UserRequest userRequest,
-                                    BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body(result.getFieldError().getDefaultMessage());
         }
-//        userService.update(userRequest);
-        return ResponseEntity.ok(messageHelper.get("update.success"));
+        try {
+            return userService.login(loginRequest);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
-
-//    @PatchMapping("/{id}/authorities/add")
-//    @PreAuthorize("hasAuthority('ADMIN')")
-//    public ResponseEntity<?> addAuthority(@PathVariable Long id, @RequestBody String role) {
-//        userService.addUserAuthority(id, role);
-//        return ResponseEntity.ok(messageHelper.get("authority.add.success"));
-//    }
 }

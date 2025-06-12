@@ -14,7 +14,7 @@ public class Answer {
     private Long id;
 
     private String content;
-    private Integer correct;
+    private Boolean correct;
 
     @ManyToOne
     @JoinColumn(nullable = false)

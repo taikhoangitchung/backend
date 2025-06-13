@@ -1,6 +1,6 @@
 package app.service;
 
-//import app.dto.EditProfileRequest;
+import app.dto.EditProfileRequest;
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
 import app.dto.RegisterRequest;

@@ -1,9 +1,9 @@
 package app.service;
 
-import app.dto.AddCategoryRequest;
+import app.dto.AddOrUpdateCategoryRequest;
 import app.dto.CategoryResponse;
 import app.entity.Category;
-import app.entity.Question;
+import app.exception.DeleteException;
 import app.exception.DuplicateException;
 import app.exception.NotFoundException;
 import app.repository.CategoryRepository;
@@ -21,7 +21,7 @@ public class CategoryService {
     private final QuestionRepository questionRepository;
     private final MessageHelper messageHelper;
 
-    public void addCategory(AddCategoryRequest request) {
+    public void addCategory(AddOrUpdateCategoryRequest request) {
         if (categoryRepository.existsByName(request.getName())) {
             throw new DuplicateException(messageHelper.get("category.exists"));
         }
@@ -43,11 +43,27 @@ public class CategoryService {
                 }).toList();
     }
 
-//    public void deleteCategory(Long id) {
-//        if (!categoryRepository.existsById(id)) {
-//            throw new NotFoundException(messageHelper.get("category.not.found"));
-//        }
-//        if ()
-//        categoryRepository.deleteById(id);
-//    }
+    public void deleteCategory(Long id) {
+        if (!categoryRepository.existsById(id)) {
+            throw new NotFoundException(messageHelper.get("category.not.found"));
+        }
+        if (questionRepository.existsByCategoryId(id)) {
+            throw new DeleteException(messageHelper.get("category.has.questions"));
+        }
+        categoryRepository.deleteById(id);
+    }
+
+    public Category getCategoryById(Long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("category.not.found")));
+    }
+    public void update(Long id, AddOrUpdateCategoryRequest request) {
+        Category category = getCategoryById(id);
+        if (categoryRepository.existsByNameAndIdNot(request.getName(), id)) {
+            throw new DuplicateException(messageHelper.get("category.exists"));
+        }
+        category.setName(request.getName());
+        category.setDescription(request.getDescription());
+        categoryRepository.save(category);
+    }
 }

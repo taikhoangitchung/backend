@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class AddCategoryRequest {
+public class AddOrUpdateCategoryRequest {
     @NotBlank(message = "{category.name.required}")
     @Pattern(regexp = "^[A-Z].*", message = "{category.name.pattern}")
     private String name;

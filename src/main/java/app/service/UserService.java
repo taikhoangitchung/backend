@@ -70,12 +70,12 @@ public class UserService {
 
         String username = registerRequest.getUsername();
         if (username == null || username.trim().isEmpty()) {
-            username = registerRequest.getEmail(); // Fallback sang email
+            username = registerRequest.getEmail();
             registerRequest.setUsername(username);
         }
 
         if (existsByEmail(registerRequest.getEmail())) {
-            return ResponseEntity.badRequest().body("Email đã tồn tại");
+            return ResponseEntity.badRequest().body("Email đã tồn tại. Vui lòng sử dụng email khác.");
         }
 
         try {
@@ -84,9 +84,11 @@ public class UserService {
             user.setCreateAt(LocalDateTime.now()); // Thiết lập thời gian tạo
             userRepository.save(user);
             return ResponseEntity.ok("Đăng ký thành công!");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Dữ liệu không hợp lệ: " + e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký không thành công: " + e.getMessage());
+            e.printStackTrace(); // Giữ log lỗi để debug
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký không thành công do lỗi hệ thống. Vui lòng thử lại.");
         }
     }
 

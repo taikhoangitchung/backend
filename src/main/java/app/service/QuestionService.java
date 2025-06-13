@@ -2,8 +2,9 @@ package app.service;
 
 import app.dto.AddQuestionRequest;
 import app.dto.EditQuestionRequest;
+import app.dto.QuestionResponse;
 import app.entity.*;
-import app.exception.QuestionAddedIntoExamException;
+import app.exception.DeleteException;
 import app.exception.NotFoundException;
 import app.repository.*;
 import app.util.MessageHelper;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -40,8 +42,20 @@ public class QuestionService {
     }
 
     @Transactional
-    public List<Question> findByUserId(long userId) {
-        return questionRepository.findAllByUserId(userId);
+    public List<QuestionResponse> findByUserId(long userId) {
+        List<Question> questions = questionRepository.findByUserId(userId);
+        return questions.stream()
+                .map(question -> {
+                    QuestionResponse response = new QuestionResponse();
+                    response.setId(question.getId());
+                    response.setContent(question.getContent());
+                    response.setCategory(question.getCategory().getName());
+                    response.setType(question.getType().getName());
+                    response.setDifficulty(question.getDifficulty().getName());
+                    response.setAnswers(question.getAnswers());
+                    return response;
+                })
+                .toList();
     }
 
     public Question findById(long id) {
@@ -55,7 +69,7 @@ public class QuestionService {
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("question.notFound")));
 
         if (!question.getExams().isEmpty()) {
-            throw new QuestionAddedIntoExamException(messageHelper.get("question.update.conflict"));
+            throw new DeleteException(messageHelper.get("question.update.conflict"));
         }
 
         Category category = categoryRepository.findByName(request.getCategory());

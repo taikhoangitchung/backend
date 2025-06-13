@@ -93,4 +93,15 @@ public class QuestionService {
         questionRepository.save(question);
     }
 
+    public void delete(long id) {
+        Question question = questionRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("question.notFound")));
+
+        if (!question.getExams().isEmpty()) {
+            throw new DeleteException(messageHelper.get("question.delete.conflict"));
+        }
+
+        questionRepository.delete(question);
+        answerRepository.deleteAll(question.getAnswers());
+    }
 }

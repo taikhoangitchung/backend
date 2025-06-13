@@ -1,7 +1,6 @@
 package app.dto;
 
 import app.entity.Answer;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +9,7 @@ import java.util.List;
 
 @Setter
 @Getter
-public class AddQuestionRequest {
+public class EditQuestionRequest {
     @NotBlank(message = "{category.required}")
     private String category;
 
@@ -25,8 +24,4 @@ public class AddQuestionRequest {
 
     @NotBlank(message = "{answers.required}")
     private List<Answer> answers;
-
-    @NotBlank
-    @Min(value = 1)
-    private Long userId; // Assuming the user ID is needed to track who created the question
 }

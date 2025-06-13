@@ -1,18 +1,14 @@
 package app.controller;
 
+import app.dto.ChangePasswordRequest;
+import app.dto.LoginRequest;
 import app.dto.RegisterRequest;
-import app.dto.UserRequest;
 import app.service.UserService;
-import app.util.BindingHandler;
 import app.util.MessageHelper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-//import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-//import quiz.entity.Authority;
-
 
 @RestController
 @RequiredArgsConstructor
@@ -43,48 +39,18 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest,
-                                      BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
-        }
-        userService.register(registerRequest);
-        return ResponseEntity.status(201).body(messageHelper.get("register.success"));
+    public ResponseEntity<String> processRegister(@Valid @RequestBody RegisterRequest registerRequest) {
+        System.out.println("Đăng ký với: " + registerRequest);
+        return userService.register(registerRequest);
     }
 
-//    @PostMapping("/login")
-//    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-//        return ResponseEntity.ok(userService.login(loginRequest));
-//    }
-
-//    @GetMapping({"", "/{role}"})
-//    @PreAuthorize("hasAuthority('ADMIN')")
-//    public ResponseEntity<?> getUserList(@PathVariable(required = false) String role) {
-//        if (role == null || role.trim().isEmpty()) {
-//            return ResponseEntity.ok(userService.findAll());
-//        }
-//        return ResponseEntity.ok(userService.findByRole(Authority.Role.valueOf(role.toUpperCase())));
-//    }
-
-//    @GetMapping("/stats")
-//    public ResponseEntity<?> getStats() {
-//        return ResponseEntity.ok(userService.getStats());
-//    }
-
-    @PatchMapping
-    public ResponseEntity<?> update(@Valid @RequestBody UserRequest userRequest,
-                                    BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
-        }
-//        userService.update(userRequest);
-        return ResponseEntity.ok(messageHelper.get("update.success"));
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+        return userService.login(loginRequest);
     }
 
-//    @PatchMapping("/{id}/authorities/add")
-//    @PreAuthorize("hasAuthority('ADMIN')")
-//    public ResponseEntity<?> addAuthority(@PathVariable Long id, @RequestBody String role) {
-//        userService.addUserAuthority(id, role);
-//        return ResponseEntity.ok(messageHelper.get("authority.add.success"));
-//    }
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+        return userService.changePassword(request.getEmail(), request.getOldPassword(), request.getNewPassword());
+    }
 }

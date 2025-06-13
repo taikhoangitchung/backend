@@ -1,5 +1,6 @@
 package app.controller;
 
+import app.dto.AddTypeRequest;
 import app.service.TypeService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;
@@ -18,12 +19,12 @@ public class TypeController {
     private final MessageHelper messageHelper;
 
     @PostMapping
-    public ResponseEntity<?> addType(@Valid @RequestBody String typeName,
+    public ResponseEntity<?> addType(@Valid @RequestBody AddTypeRequest request,
                                      BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
         }
-        typeService.addType(typeName);
+        typeService.addType(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("type.create.success"));
     }
     @GetMapping

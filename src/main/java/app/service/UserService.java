@@ -1,35 +1,39 @@
 package app.service;
 
+import app.dto.LoginRequest;
+import app.dto.LoginResponse;
 import app.dto.RegisterRequest;
 import app.entity.User;
-import app.exception.DuplicateException;
+import app.exception.AuthException;
+//import app.mapper.RegisterMapper;
 import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final UserRepository userRepository;
-//    private final AuthorityRepository authorityRepository;
-//    private final JwtService jwtService;
 
+    private final UserRepository userRepository;
+//    private final RegisterMapper registerMapper;
     private final MessageHelper messageHelper;
 
-    public void register(RegisterRequest registerRequest) {
-        if (existedUsername(registerRequest.getUsername())) {
-            throw new DuplicateException(messageHelper.get("username.exists"));
-        }
-//        User user = registerMapper.toEntity(registerRequest);
-//        Set<Authority> authorities = new HashSet<>();
-//        authorities.add(authorityRepository.findByRole(Authority.Role.MEMBER));
-//        user.setAuthorities(authorities);
-//        userRepository.save(user);
+    public boolean existsByUsername(String username) {
+        return userRepository.existsByUsername(username);
     }
 
     public List<User> findAllExceptAdminSortByCreateAt() {
@@ -46,7 +50,6 @@ public class UserService {
         return userRepository.searchFollowNameAndEmail(keyName, keyEmail);
     }
 
-    @Transactional
     public boolean removeUser(long userId) {
         userRepository.deleteById(userId);
         return !userRepository.existsById(userId);
@@ -56,65 +59,68 @@ public class UserService {
         return userRepository.existsByUsername(username);
     }
 
-//    public String login(LoginRequest loginRequest) {
-//        User foundUser = userRepository.findByUsername(loginRequest.getUsername());
-//        if (foundUser == null || !foundUser.getPassword().equals(loginRequest.getPassword())) {
-//            throw new AuthException(messageHelper.get("auth.fail"));
-//        }
-//        return jwtService.generateToken(foundUser);
-//    }
-
-//    public List<UserResponse> findAll() {
-//        return userRepository.findByAuthorities_RoleNot(Authority.Role.ADMIN).stream().map(userMapper::toDTO).toList();
+//    public boolean existsByEmail(String email) {
+//        return userRepository.existsByEmail(email);
+//
 //    }
 //
-//    public List<UserResponse> findByRole(Authority.Role role) {
-//        return  userRepository.findByAuthorities_Role(role).stream().map(userMapper::toDTO).toList();
-//    }
-
-//    public Map<String, Long> getStats() {
-//        Map<String, Long> roleStats = new HashMap<>();
-//        long totalUser = userRepository.count() - 1;
-//        roleStats.put("total", totalUser);
-//
-//        for (Authority authority : authorityRepository.findAllByRoleNot(Authority.Role.ADMIN)) {
-//            roleStats.put(authority.getRole().name(), userRepository.countByAuthorities_Role(authority.getRole()));
-//        }
-//        return roleStats;
-//    }
-
-
-//    public void update(UserRequest userRequest) {
-//        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-//        User foundUser = userRepository.findByUsername(username);
-//        if (emailExisted(userRequest.getEmail(), foundUser)) {
-//            throw new DuplicateException(messageHelper.get("email.exists"));
+//    public ResponseEntity<String> register(RegisterRequest registerRequest) {
+//        // Xử lý validate từ BindingResult (nếu có lỗi từ @Valid)
+//        if (registerRequest == null) {
+//            return ResponseEntity.badRequest().body("Dữ liệu không hợp lệ");
 //        }
 //
-//        if (phoneExisted(userRequest.getPhone(), foundUser)) {
-//            throw new DuplicateException(messageHelper.get("phone.exists"));
+//        String username = registerRequest.getUsername();
+//        if (username == null || username.trim().isEmpty()) {
+//            username = registerRequest.getEmail(); // Fallback sang email
+//            registerRequest.setUsername(username);
 //        }
-//        userMapper.updateEntity(userRequest, foundUser);
-//        userRepository.save(foundUser);
+//
+//        if (existsByEmail(registerRequest.getEmail())) {
+//            return ResponseEntity.badRequest().body("Email đã tồn tại");
+//        }
+//
+//        try {
+//            User user = registerMapper.toEntity(registerRequest);
+//            userRepository.save(user);
+//            return ResponseEntity.ok("Đăng ký thành công!");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký không thành công: " + e.getMessage());
+//        }
 //    }
-
-
-    boolean emailExisted(String email, User foundUser) {
-        return userRepository.existsByEmailAndIdNot(email, foundUser.getId());
-    }
-
-    boolean phoneExisted(String phone, User foundUser) {
-        return userRepository.existsByPhoneAndIdNot(phone, foundUser.getId());
-    }
-
-//    public void addUserAuthority(Long userId, String role) {
-//        User foundUser = userRepository.findById(userId)
-//                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
-//        Authority authority = authorityRepository.findByRole(Authority.Role.valueOf(role));
-//        if (authority == null) {
-//            throw new NotFoundException(messageHelper.get("authority.not.found"));
+//
+//    public ResponseEntity<LoginResponse> login(LoginRequest loginRequest) {
+//        String email = loginRequest.getEmail();
+//        String password = loginRequest.getPassword();
+//
+//        Optional<User> userOptional = userRepository.findByEmail(email);
+//        if (userOptional.isEmpty()) {
+//            throw new AuthException(messageHelper.get("email.not.exist"));
 //        }
-//        foundUser.getAuthorities().add(authority);
-//        userRepository.save(foundUser);
+//
+//        User user = userOptional.get();
+//        if (!password.equals(user.getPassword())) {
+//            throw new AuthException(messageHelper.get("password.incorrect"));
+//        }
+//
+//        return ResponseEntity.ok(new LoginResponse("Đăng nhập thành công!", true));
+//    }
+//
+//    public ResponseEntity<?> changePassword(String email, String oldPassword, String newPassword) {
+//        User user = userRepository.findByEmail(email)
+//                .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
+//
+//        if (!oldPassword.equals(user.getPassword())) {
+//            return ResponseEntity.badRequest().body("Mật khẩu cũ không đúng");
+//        }
+//
+//        if (oldPassword.equals(newPassword)) {
+//            return ResponseEntity.badRequest().body("Mật khẩu mới không được giống mật khẩu cũ");
+//        }
+//
+//        user.setPassword(newPassword); // Lưu mật khẩu plain text (không khuyến khích)
+//        userRepository.save(user);
+//        return ResponseEntity.ok("Đổi mật khẩu thành công");
 //    }
 }

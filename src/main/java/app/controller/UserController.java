@@ -1,7 +1,7 @@
 package app.controller;
 
 import app.dto.ChangePasswordRequest;
-import app.dto.EditProfileRequest;
+//import app.dto.EditProfileRequest;
 import app.dto.LoginRequest;
 import app.dto.RegisterRequest;
 import app.service.UserService;
@@ -29,16 +29,15 @@ public class UserController {
         return ResponseEntity.ok(userService.isAdmin(userId));
     }
 
-
-    @PostMapping("/register")
-    public ResponseEntity<String> processRegister(@Valid @RequestBody RegisterRequest registerRequest) {
-        System.out.println("Đăng ký với: " + registerRequest);
-        return userService.register(registerRequest);
+    @GetMapping("/search")
+    public ResponseEntity<?> search(@RequestParam(required = false) String keyName,
+                                                      @RequestParam(required = false) String keyEmail) {
+        return ResponseEntity.ok(userService.searchFollowNameAndEmail(keyName, keyEmail));
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
-        return userService.login(loginRequest);
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<?> removeUser(@PathVariable long userId) {
+        return ResponseEntity.ok(userService.removeUser(userId));
     }
 
     @PostMapping("/change-password")
@@ -46,15 +45,15 @@ public class UserController {
         return userService.changePassword(request.getEmail(), request.getOldPassword(), request.getNewPassword());
     }
 
-    @PostMapping("/edit")
-    public ResponseEntity<?> editProfile(
-            @RequestParam("email") String email,
-            @RequestParam("username") String username,
-            @RequestParam(value = "avatar", required = false) MultipartFile avatarFile) {
-        EditProfileRequest request = new EditProfileRequest();
-        request.setUsername(username);
-        return userService.editProfile(email, request, avatarFile);
-    }
+//    @PostMapping("/edit")
+//    public ResponseEntity<?> editProfile(
+//            @RequestParam("email") String email,
+//            @RequestParam("username") String username,
+//            @RequestParam(value = "avatar", required = false) MultipartFile avatarFile) {
+//        EditProfileRequest request = new EditProfileRequest();
+//        request.setUsername(username);
+//        return userService.editProfile(email, request, avatarFile);
+//    }
 
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(@RequestParam("email") String email) {

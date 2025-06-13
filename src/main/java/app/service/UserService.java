@@ -1,6 +1,6 @@
 package app.service;
 
-import app.dto.EditProfileRequest;
+//import app.dto.EditProfileRequest;
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
 import app.dto.RegisterRequest;
@@ -42,15 +42,23 @@ public class UserService {
         return userRepository.existsByUsername(username);
     }
 
-
     public List<User> findAllExceptAdminSortByCreateAt() {
         List<User> users = userRepository.findAllExceptAdmin();
-        users.sort(Comparator.comparing(User::getCreateAt).reversed());
+        users.sort(Comparator.comparing(User::getLastLogin).reversed());
         return users;
     }
 
     public boolean isAdmin(long userId) {
         return userRepository.isAdmin(userId);
+    }
+
+    public List<User> searchFollowNameAndEmail(String keyName, String keyEmail) {
+        return userRepository.searchFollowNameAndEmail(keyName, keyEmail);
+    }
+
+    public boolean removeUser(long userId) {
+        userRepository.deleteById(userId);
+        return !userRepository.existsById(userId);
     }
 
     private boolean existedUsername(String username) {
@@ -129,43 +137,43 @@ public class UserService {
         return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
 
-    public ResponseEntity<?> editProfile(String email, EditProfileRequest request, MultipartFile avatarFile) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
+   public ResponseEntity<?> editProfile(String email, EditProfileRequest request, MultipartFile avatarFile) {
+       User user = userRepository.findByEmail(email)
+               .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
 
-        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
-            user.setUsername(request.getUsername());
-        }
+       if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+           user.setUsername(request.getUsername());
+       }
 
-        if (avatarFile != null && !avatarFile.isEmpty()) {
-            try {
-                String fileName = System.currentTimeMillis() + "_" + avatarFile.getOriginalFilename();
-                Path uploadPath = Paths.get(AVATAR_UPLOAD_DIR + fileName);
-                Files.createDirectories(uploadPath.getParent());
-                Files.copy(avatarFile.getInputStream(), uploadPath);
-                user.setAvatar(fileName); // Lưu tên file chính xác
-                System.out.println("Uploaded file: " + fileName); // Debug: Kiểm tra tên file
-            } catch (IOException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi upload avatar: " + e.getMessage());
-            }
-        } else if (user.getAvatar() == null) {
-            user.setAvatar(DEFAULT_AVATAR); // Gán mặc định nếu chưa có avatar
-        }
+       if (avatarFile != null && !avatarFile.isEmpty()) {
+           try {
+               String fileName = System.currentTimeMillis() + "_" + avatarFile.getOriginalFilename();
+               Path uploadPath = Paths.get(AVATAR_UPLOAD_DIR + fileName);
+               Files.createDirectories(uploadPath.getParent());
+               Files.copy(avatarFile.getInputStream(), uploadPath);
+               user.setAvatar(fileName); // Lưu tên file chính xác
+               System.out.println("Uploaded file: " + fileName); // Debug: Kiểm tra tên file
+           } catch (IOException e) {
+               return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi upload avatar: " + e.getMessage());
+           }
+       } else if (user.getAvatar() == null) {
+           user.setAvatar(DEFAULT_AVATAR); // Gán mặc định nếu chưa có avatar
+       }
 
-        userRepository.save(user);
+       userRepository.save(user);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Cập nhật thông tin thành công");
-        response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
-        return ResponseEntity.ok(response);
-    }
+       Map<String, String> response = new HashMap<>();
+       response.put("message", "Cập nhật thông tin thành công");
+       response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
+       return ResponseEntity.ok(response);
+   }
 
-    public ResponseEntity<?> getProfile(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
-        Map<String, Object> response = new HashMap<>();
-        response.put("username", user.getUsername() != null ? user.getUsername() : "");
-        response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
-        return ResponseEntity.ok(response);
-    }
+   public ResponseEntity<?> getProfile(String email) {
+       User user = userRepository.findByEmail(email)
+               .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
+       Map<String, Object> response = new HashMap<>();
+       response.put("username", user.getUsername() != null ? user.getUsername() : "");
+       response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
+       return ResponseEntity.ok(response);
+   }
 }

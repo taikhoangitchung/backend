@@ -1,6 +1,6 @@
 package app.controller;
 
-import app.dto.AddCategoryRequest;
+import app.dto.AddOrUpdateCategoryRequest;
 import app.service.CategoryService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;
@@ -19,7 +19,7 @@ public class CategoryController {
     private final MessageHelper messageHelper;
 
     @PostMapping
-    public ResponseEntity<?> addCategory(@Valid @RequestBody AddCategoryRequest request,
+    public ResponseEntity<?> addCategory(@Valid @RequestBody AddOrUpdateCategoryRequest request,
                                          BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
@@ -33,12 +33,24 @@ public class CategoryController {
         return ResponseEntity.ok().body(categoryService.getAllCategories());
     }
 
-//    @DeleteMapping("{id}")
-//    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
-//        if (id == null || id <= 0) {
-//            return ResponseEntity.badRequest().body(messageHelper.get("category.not.found"));
-//        }
-//        categoryService.deleteCategory(id);
-//        return ResponseEntity.ok().body(messageHelper.get("category.delete.success"));
-//    }
+    @GetMapping("{id}")
+    public ResponseEntity<?> getCategoryById(@PathVariable Long id) {
+        return ResponseEntity.ok().body(categoryService.getCategoryById(id));
+    }
+
+    @PutMapping("{id}")
+    public ResponseEntity<?> updateCategory(@Valid @RequestBody AddOrUpdateCategoryRequest request,
+                                            BindingResult bindingResult, @PathVariable Long id) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
+        }
+        categoryService.update(id, request);
+        return ResponseEntity.ok().body(messageHelper.get("category.update.success"));
+    }
+
+    @DeleteMapping("{id}")
+    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+        categoryService.deleteCategory(id);
+        return ResponseEntity.ok().body(messageHelper.get("category.delete.success"));
+    }
 }

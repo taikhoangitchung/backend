@@ -9,6 +9,12 @@ import app.mapper.RegisterMapper;
 import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.stereotype.Service;
+
+import java.util.Comparator;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -16,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -29,8 +36,24 @@ public class UserService {
         return userRepository.existsByUsername(username);
     }
 
+
+    public List<User> findAllExceptAdminSortByCreateAt() {
+        List<User> users = userRepository.findAllExceptAdmin();
+        users.sort(Comparator.comparing(User::getCreateAt).reversed());
+        return users;
+    }
+
+    public boolean isAdmin(long userId) {
+        return userRepository.isAdmin(userId);
+    }
+
+    private boolean existedUsername(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
+
     }
 
     public ResponseEntity<String> register(RegisterRequest registerRequest) {

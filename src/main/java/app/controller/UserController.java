@@ -38,19 +38,19 @@ public class UserController {
         return ResponseEntity.ok(userService.removeUser(userId));
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<String> processRegister(@Valid @RequestBody RegisterRequest registerRequest) {
-        System.out.println("Đăng ký với: " + registerRequest);
-        return userService.register(registerRequest);
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
-        return userService.login(loginRequest);
-    }
-
-    @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
-        return userService.changePassword(request.getEmail(), request.getOldPassword(), request.getNewPassword());
-    }
+//    @PostMapping("/register")
+//    public ResponseEntity<String> processRegister(@Valid @RequestBody RegisterRequest registerRequest) {
+//        System.out.println("Đăng ký với: " + registerRequest);
+//        return userService.register(registerRequest);
+//    }
+//
+//    @PostMapping("/login")
+//    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+//        return userService.login(loginRequest);
+//    }
+//
+//    @PostMapping("/change-password")
+//    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+//        return userService.changePassword(request.getEmail(), request.getOldPassword(), request.getNewPassword());
+//    }
 }

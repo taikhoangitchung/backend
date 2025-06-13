@@ -36,4 +36,7 @@ public class User {
 
     @Column
     private LocalDateTime lastLogin;
+
+    @Column(nullable = true, length = 255)
+    private String avatar;
 }

@@ -24,6 +24,9 @@ public class DatabaseStarter implements CommandLineRunner {
     @Value("${admin.email}")
     private String adminEmail;
 
+    @Value("${admin.avatar}")
+    private String adminAvatar;
+
     @Value("${admin.password}")
     private String adminPassword;
 
@@ -40,6 +43,7 @@ public class DatabaseStarter implements CommandLineRunner {
             User admin = new User();
             admin.setUsername(adminUsername);
             admin.setEmail(adminEmail);
+            admin.setAvatar(adminAvatar);
             admin.setPassword(adminPassword);
             admin.setCreateAt(LocalDateTime.now());
 //            Set<Authority> authorities = new HashSet<>();

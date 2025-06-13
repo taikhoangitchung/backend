@@ -37,4 +37,10 @@ public class QuestionController {
         questionService.addQuestion(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("question.create.success"));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteQuestion(@PathVariable long id) {
+        questionService.delete(id);
+        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("question.delete.success"));
+    }
 }

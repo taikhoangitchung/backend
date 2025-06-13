@@ -7,13 +7,14 @@ import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class UserService  {
+public class UserService {
     private final UserRepository userRepository;
 //    private final AuthorityRepository authorityRepository;
 //    private final JwtService jwtService;
@@ -33,12 +34,22 @@ public class UserService  {
 
     public List<User> findAllExceptAdminSortByCreateAt() {
         List<User> users = userRepository.findAllExceptAdmin();
-        users.sort(Comparator.comparing(User::getCreateAt).reversed());
+        users.sort(Comparator.comparing(User::getLastLogin).reversed());
         return users;
     }
 
     public boolean isAdmin(long userId) {
         return userRepository.isAdmin(userId);
+    }
+
+    public List<User> searchFollowNameAndEmail(String keyName, String keyEmail) {
+        return userRepository.searchFollowNameAndEmail(keyName, keyEmail);
+    }
+
+    @Transactional
+    public boolean removeUser(long userId) {
+        userRepository.deleteById(userId);
+        return !userRepository.existsById(userId);
     }
 
     private boolean existedUsername(String username) {

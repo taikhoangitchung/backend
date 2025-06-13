@@ -15,6 +15,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u.active FROM User u WHERE u.id = :userId")
     boolean isAdmin(@Param("userId") long userId);
 
+    @Query("SELECT u FROM User u WHERE ((:keyName IS NULL OR u.username LIKE %:keyName%) " +
+            "AND (:keyEmail IS NULL OR u.email LIKE %:keyEmail%))")
+    List<User> searchFollowNameAndEmail(@Param("keyName") String keyName,@Param("keyEmail") String keyEmail);
+
     User findByUsername(String username);
 
     User findByEmail(String email);

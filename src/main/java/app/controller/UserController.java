@@ -31,6 +31,16 @@ public class UserController {
         return ResponseEntity.ok(userService.isAdmin(userId));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> search(@RequestParam(required = false) String keyName,
+                                                      @RequestParam(required = false) String keyEmail) {
+        return ResponseEntity.ok(userService.searchFollowNameAndEmail(keyName, keyEmail));
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<?> removeUser(@PathVariable long userId) {
+        return ResponseEntity.ok(userService.removeUser(userId));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest,

@@ -70,33 +70,35 @@ public class UserService {
 
     }
 
-//    public ResponseEntity<String> register(RegisterRequest registerRequest) {
-//        // Xử lý validate từ BindingResult (nếu có lỗi từ @Valid)
-//        if (registerRequest == null) {
-//            return ResponseEntity.badRequest().body("Dữ liệu không hợp lệ");
-//        }
-//
-//        String username = registerRequest.getUsername();
-//        if (username == null || username.trim().isEmpty()) {
-//            username = registerRequest.getEmail(); // Fallback sang email
-//            registerRequest.setUsername(username);
-//        }
-//
-//        if (existsByEmail(registerRequest.getEmail())) {
-//            return ResponseEntity.badRequest().body("Email đã tồn tại");
-//        }
-//
-//        try {
-//            User user = registerMapper.toEntity(registerRequest);
-//            user.setAvatar(DEFAULT_AVATAR); // Gán avatar mặc định khi đăng ký
-//            user.setCreateAt(LocalDateTime.now()); // Thiết lập thời gian tạo
-//            userRepository.save(user);
-//            return ResponseEntity.ok("Đăng ký thành công!");
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký không thành công: " + e.getMessage());
-//        }
-//    }
+    public ResponseEntity<String> register(RegisterRequest registerRequest) {
+        // Xử lý validate từ BindingResult (nếu có lỗi từ @Valid)
+        if (registerRequest == null) {
+            return ResponseEntity.badRequest().body("Dữ liệu không hợp lệ");
+        }
+
+        String username = registerRequest.getUsername();
+        if (username == null || username.trim().isEmpty()) {
+            username = registerRequest.getEmail();
+            registerRequest.setUsername(username);
+        }
+
+        if (existsByEmail(registerRequest.getEmail())) {
+            return ResponseEntity.badRequest().body("Email đã tồn tại. Vui lòng sử dụng email khác.");
+        }
+
+        try {
+            User user = registerMapper.toEntity(registerRequest);
+            user.setAvatar(DEFAULT_AVATAR); // Gán avatar mặc định khi đăng ký
+            user.setCreateAt(LocalDateTime.now()); // Thiết lập thời gian tạo
+            userRepository.save(user);
+            return ResponseEntity.ok("Đăng ký thành công!");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Dữ liệu không hợp lệ: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace(); // Giữ log lỗi để debug
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký không thành công do lỗi hệ thống. Vui lòng thử lại.");
+        }
+    }
 
     public ResponseEntity<LoginResponse> login(LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
@@ -135,43 +137,43 @@ public class UserService {
         return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
 
-//    public ResponseEntity<?> editProfile(String email, EditProfileRequest request, MultipartFile avatarFile) {
-//        User user = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
-//
-//        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
-//            user.setUsername(request.getUsername());
-//        }
-//
-//        if (avatarFile != null && !avatarFile.isEmpty()) {
-//            try {
-//                String fileName = System.currentTimeMillis() + "_" + avatarFile.getOriginalFilename();
-//                Path uploadPath = Paths.get(AVATAR_UPLOAD_DIR + fileName);
-//                Files.createDirectories(uploadPath.getParent());
-//                Files.copy(avatarFile.getInputStream(), uploadPath);
-//                user.setAvatar(fileName); // Lưu tên file chính xác
-//                System.out.println("Uploaded file: " + fileName); // Debug: Kiểm tra tên file
-//            } catch (IOException e) {
-//                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi upload avatar: " + e.getMessage());
-//            }
-//        } else if (user.getAvatar() == null) {
-//            user.setAvatar(DEFAULT_AVATAR); // Gán mặc định nếu chưa có avatar
-//        }
-//
-//        userRepository.save(user);
-//
-//        Map<String, String> response = new HashMap<>();
-//        response.put("message", "Cập nhật thông tin thành công");
-//        response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
-//        return ResponseEntity.ok(response);
-//    }
-//
-//    public ResponseEntity<?> getProfile(String email) {
-//        User user = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
-//        Map<String, Object> response = new HashMap<>();
-//        response.put("username", user.getUsername() != null ? user.getUsername() : "");
-//        response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
-//        return ResponseEntity.ok(response);
-//    }
+   public ResponseEntity<?> editProfile(String email, EditProfileRequest request, MultipartFile avatarFile) {
+       User user = userRepository.findByEmail(email)
+               .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
+
+       if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+           user.setUsername(request.getUsername());
+       }
+
+       if (avatarFile != null && !avatarFile.isEmpty()) {
+           try {
+               String fileName = System.currentTimeMillis() + "_" + avatarFile.getOriginalFilename();
+               Path uploadPath = Paths.get(AVATAR_UPLOAD_DIR + fileName);
+               Files.createDirectories(uploadPath.getParent());
+               Files.copy(avatarFile.getInputStream(), uploadPath);
+               user.setAvatar(fileName); // Lưu tên file chính xác
+               System.out.println("Uploaded file: " + fileName); // Debug: Kiểm tra tên file
+           } catch (IOException e) {
+               return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi upload avatar: " + e.getMessage());
+           }
+       } else if (user.getAvatar() == null) {
+           user.setAvatar(DEFAULT_AVATAR); // Gán mặc định nếu chưa có avatar
+       }
+
+       userRepository.save(user);
+
+       Map<String, String> response = new HashMap<>();
+       response.put("message", "Cập nhật thông tin thành công");
+       response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
+       return ResponseEntity.ok(response);
+   }
+
+   public ResponseEntity<?> getProfile(String email) {
+       User user = userRepository.findByEmail(email)
+               .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
+       Map<String, Object> response = new HashMap<>();
+       response.put("username", user.getUsername() != null ? user.getUsername() : "");
+       response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
+       return ResponseEntity.ok(response);
+   }
 }

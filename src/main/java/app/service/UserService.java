@@ -48,10 +48,6 @@ public class UserService {
         return users;
     }
 
-    public boolean isAdmin(long userId) {
-        return userRepository.isAdmin(userId);
-    }
-
     public List<User> searchFollowNameAndEmail(String keyName, String keyEmail) {
         return userRepository.searchFollowNameAndEmail(keyName, keyEmail);
     }

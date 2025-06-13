@@ -46,13 +46,18 @@ public class UserController {
         return userService.changePassword(request.getEmail(), request.getOldPassword(), request.getNewPassword());
     }
 
-    @PostMapping("/edit-profile")
-    public ResponseEntity<?> updateProfile(
+    @PostMapping("/edit")
+    public ResponseEntity<?> editProfile(
             @RequestParam("email") String email,
-            @RequestParam("displayName") String userName,
+            @RequestParam("username") String username,
             @RequestParam(value = "avatar", required = false) MultipartFile avatarFile) {
         EditProfileRequest request = new EditProfileRequest();
-        request.setUserName(userName);
+        request.setUsername(username);
         return userService.editProfile(email, request, avatarFile);
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(@RequestParam("email") String email) {
+        return userService.getProfile(email);
     }
 }

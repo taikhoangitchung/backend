@@ -18,26 +18,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Optional;
-
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository userRepository;
+    public final UserRepository userRepository;
     private final RegisterMapper registerMapper;
     private final MessageHelper messageHelper;
 
     private static final String AVATAR_UPLOAD_DIR = "src/main/resources/static/media/";
+    private static final String BASE_URL = "http://localhost:8080";
     private static final String DEFAULT_AVATAR = "default-avatar.png";
 
     public boolean existsByUsername(String username) {
@@ -133,34 +131,39 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
 
-        if (request.getUserName() == null || request.getUserName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Tên hiển thị không được để trống");
+        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+            user.setUsername(request.getUsername());
         }
 
-        user.setUsername(request.getUserName());
-
         if (avatarFile != null && !avatarFile.isEmpty()) {
-            // Validate file type
-            String contentType = avatarFile.getContentType();
-            if (!contentType.startsWith("image/")) {
-                return ResponseEntity.badRequest().body("Chỉ chấp nhận file ảnh");
-            }
-
             try {
                 String fileName = System.currentTimeMillis() + "_" + avatarFile.getOriginalFilename();
                 Path uploadPath = Paths.get(AVATAR_UPLOAD_DIR + fileName);
                 Files.createDirectories(uploadPath.getParent());
                 Files.copy(avatarFile.getInputStream(), uploadPath);
-                user.setAvatar("/media/" + fileName);
+                user.setAvatar(fileName); // Lưu tên file chính xác
+                System.out.println("Uploaded file: " + fileName); // Debug: Kiểm tra tên file
             } catch (IOException e) {
-                e.printStackTrace();
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi upload avatar: " + e.getMessage());
             }
         } else if (user.getAvatar() == null) {
-            user.setAvatar("/media/" + DEFAULT_AVATAR);
+            user.setAvatar(DEFAULT_AVATAR); // Gán mặc định nếu chưa có avatar
         }
 
         userRepository.save(user);
-        return ResponseEntity.ok("Cập nhật thông tin thành công");
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Cập nhật thông tin thành công");
+        response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<?> getProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
+        Map<String, Object> response = new HashMap<>();
+        response.put("username", user.getUsername() != null ? user.getUsername() : "");
+        response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
+        return ResponseEntity.ok(response);
     }
 }

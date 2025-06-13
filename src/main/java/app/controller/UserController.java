@@ -1,6 +1,7 @@
 package app.controller;
 
 import app.dto.ChangePasswordRequest;
+import app.dto.EditProfileRequest;
 import app.dto.LoginRequest;
 import app.dto.RegisterRequest;
 import app.service.UserService;
@@ -9,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,5 +44,15 @@ public class UserController {
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
         return userService.changePassword(request.getEmail(), request.getOldPassword(), request.getNewPassword());
+    }
+
+    @PostMapping("/edit-profile")
+    public ResponseEntity<?> updateProfile(
+            @RequestParam("email") String email,
+            @RequestParam("displayName") String userName,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatarFile) {
+        EditProfileRequest request = new EditProfileRequest();
+        request.setUserName(userName);
+        return userService.editProfile(email, request, avatarFile);
     }
 }

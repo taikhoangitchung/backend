@@ -20,15 +20,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
             "AND (:keyEmail IS NULL OR u.email LIKE %:keyEmail%))")
     List<User> searchFollowNameAndEmail(@Param("keyName") String keyName,@Param("keyEmail") String keyEmail);
 
-    User findByUsername(String username);
-
     Optional<User> findByEmail(String email);
-
-    boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
 
     boolean existsByEmailAndIdNot(String email, Long id);
+
+    User findByUsername(String username);
+
+    boolean existsByUsername(String username);
 
 //    List<User> findByActiveTrue();
 

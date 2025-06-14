@@ -8,10 +8,10 @@ import lombok.Setter;
 @Setter
 @Getter
 public class AddOrUpdateCategoryRequest {
-    @NotBlank(message = "{category.name.required}")
+    @NotBlank(message = "{name.required}")
     @Pattern(regexp = "^[A-Z].*", message = "{category.name.pattern}")
     private String name;
 
-    @NotBlank(message = "{category.description.required}")
+    @NotBlank(message = "{description.required}")
     private String description;
 }

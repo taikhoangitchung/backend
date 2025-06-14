@@ -29,7 +29,7 @@ public class QuestionController {
     @PutMapping("/{id}")
     public ResponseEntity<?> editQuestion(@RequestBody EditQuestionRequest request, @PathVariable long id) {
         questionService.update(request,id);
-        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("question.update.success"));
+        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("update.success"));
     }
 
     @PostMapping
@@ -41,6 +41,6 @@ public class QuestionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteQuestion(@PathVariable long id) {
         questionService.delete(id);
-        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("question.delete.success"));
+        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("delete.success"));
     }
 }

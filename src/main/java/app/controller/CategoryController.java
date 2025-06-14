@@ -45,12 +45,12 @@ public class CategoryController {
             return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
         }
         categoryService.update(id, request);
-        return ResponseEntity.ok().body(messageHelper.get("category.update.success"));
+        return ResponseEntity.ok().body(messageHelper.get("update.success"));
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
-        return ResponseEntity.ok().body(messageHelper.get("category.delete.success"));
+        return ResponseEntity.ok().body(messageHelper.get("delete.success"));
     }
 }

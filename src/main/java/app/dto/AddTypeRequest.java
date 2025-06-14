@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 @Getter
 public class AddTypeRequest {
-    @NotBlank(message = "{type.name.required}")
+    @NotBlank(message = "{name.required}")
     private String name;
 }

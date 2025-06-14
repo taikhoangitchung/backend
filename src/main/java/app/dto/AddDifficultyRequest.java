@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 @Getter
 public class AddDifficultyRequest {
-    @NotBlank(message = "{difficulty.name.required}")
+    @NotBlank(message = "{name.required}")
     private String name;
 }

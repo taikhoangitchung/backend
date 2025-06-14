@@ -4,7 +4,7 @@ import app.dto.AddQuestionRequest;
 import app.dto.EditQuestionRequest;
 import app.dto.QuestionResponse;
 import app.entity.*;
-import app.exception.DeleteException;
+import app.exception.LockedException;
 import app.exception.NotFoundException;
 import app.repository.*;
 import app.util.MessageHelper;
@@ -45,6 +45,9 @@ public class QuestionService {
     }
 
     public List<QuestionResponse> findByUserId(long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException(messageHelper.get("user.not.found"));
+        }
         List<Question> questions = questionRepository.findByUserId(userId);
         return questions.stream()
                 .map(question -> {
@@ -62,13 +65,13 @@ public class QuestionService {
 
     public Question findById(long id) {
         return questionRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("question.notFound")));
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("question.not.found")));
     }
 
     public void update(EditQuestionRequest request, long id) {
         Question question = findById(id);
         if (!question.getExams().isEmpty()) {
-            throw new DeleteException(messageHelper.get("question.update.conflict"));
+            throw new LockedException(messageHelper.get("question.update.conflict"));
         }
 
         Category category = categoryRepository.findByName(request.getCategory());
@@ -89,11 +92,10 @@ public class QuestionService {
     }
 
     public void delete(long id) {
-        Question question = questionRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("question.notFound")));
+        Question question = findById(id);
 
         if (!question.getExams().isEmpty()) {
-            throw new DeleteException(messageHelper.get("question.delete.conflict"));
+            throw new LockedException(messageHelper.get("question.delete.conflict"));
         }
 
         questionRepository.delete(question);

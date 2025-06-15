@@ -1,28 +1,24 @@
 package app.service;
 
-import app.dto.EditProfileRequest;
-import app.dto.LoginRequest;
-import app.dto.LoginResponse;
-import app.dto.RegisterRequest;
+import app.dto.*;
 import app.entity.User;
 import app.exception.AuthException;
+import app.exception.DuplicateException;
+import app.exception.NotFoundException;
 import app.mapper.RegisterMapper;
 import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -34,12 +30,25 @@ public class UserService {
     private final RegisterMapper registerMapper;
     private final MessageHelper messageHelper;
 
-    private static final String AVATAR_UPLOAD_DIR = "src/main/resources/static/media/";
+    @Value("${app.upload.dir:uploads/media/}")
+    private String AVATAR_UPLOAD_DIR;
     private static final String BASE_URL = "http://localhost:8080";
     private static final String DEFAULT_AVATAR = "default-avatar.png";
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final List<String> ALLOWED_FILE_TYPES = List.of("image/jpeg", "image/png");
 
     public boolean existsByUsername(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException(messageHelper.get("username.required"));
+        }
         return userRepository.existsByUsername(username);
+    }
+
+    public boolean existsByEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException(messageHelper.get("email.required"));
+        }
+        return userRepository.existsByEmail(email);
     }
 
     public List<User> findAllExceptAdminSortByCreateAt() {
@@ -61,119 +70,115 @@ public class UserService {
         return !userRepository.existsById(userId);
     }
 
-    private boolean existedUsername(String username) {
-        return userRepository.existsByUsername(username);
-    }
-
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
-
-    }
-
-    public ResponseEntity<String> register(RegisterRequest registerRequest) {
-        // Xử lý validate từ BindingResult (nếu có lỗi từ @Valid)
+    public ResponseEntity<UserResponse> register(RegisterRequest registerRequest) {
         if (registerRequest == null) {
-            return ResponseEntity.badRequest().body("Dữ liệu không hợp lệ");
+            throw new IllegalArgumentException(messageHelper.get("invalid.request.data"));
         }
 
         String username = registerRequest.getUsername();
         if (username == null || username.trim().isEmpty()) {
-            username = registerRequest.getEmail();
+            username = registerRequest.getEmail().split("@")[0];
             registerRequest.setUsername(username);
         }
 
         if (existsByEmail(registerRequest.getEmail())) {
-            return ResponseEntity.badRequest().body("Email đã tồn tại. Vui lòng sử dụng email khác.");
+            throw new DuplicateException(messageHelper.get("email.exists"));
+        }
+        if (existsByUsername(registerRequest.getUsername())) {
+            throw new DuplicateException(messageHelper.get("username.exists"));
         }
 
         try {
             User user = registerMapper.toEntity(registerRequest);
-            user.setAvatar(DEFAULT_AVATAR); // Gán avatar mặc định khi đăng ký
-            user.setCreateAt(LocalDateTime.now()); // Thiết lập thời gian tạo
+            user.setAvatar(DEFAULT_AVATAR);
+            user.setCreateAt(LocalDateTime.now());
             userRepository.save(user);
-            return ResponseEntity.ok("Đăng ký thành công!");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Dữ liệu không hợp lệ: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CREATED).body(toUserResponse(user));
         } catch (Exception e) {
-            e.printStackTrace(); // Giữ log lỗi để debug
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký không thành công do lỗi hệ thống. Vui lòng thử lại.");
+            throw new RuntimeException(messageHelper.get("register.failed") + ": " + e.getMessage(), e);
         }
     }
 
     public ResponseEntity<LoginResponse> login(LoginRequest loginRequest) {
-        String email = loginRequest.getEmail();
-        String password = loginRequest.getPassword();
-
-        Optional<User> userOptional = userRepository.findByEmail(email);
-        if (userOptional.isEmpty()) {
-            throw new AuthException(messageHelper.get("email.not.exist"));
+        if (loginRequest == null || loginRequest.getEmail() == null || loginRequest.getPassword() == null) {
+            throw new IllegalArgumentException(messageHelper.get("invalid.login.data"));
         }
 
-        User user = userOptional.get();
-        if (!password.equals(user.getPassword())) {
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("email.not.exist")));
+
+        if (!loginRequest.getPassword().equals(user.getPassword())) {
             throw new AuthException(messageHelper.get("password.incorrect"));
         }
 
-        user.setLastLogin(LocalDateTime.now()); // Cập nhật thời gian đăng nhập
-        userRepository.save(user); // Lưu lại thông tin người dùng
-
-        return ResponseEntity.ok(new LoginResponse("Đăng nhập thành công!", true));
-    }
-
-    public ResponseEntity<?> changePassword(String email, String oldPassword, String newPassword) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
-
-        if (!oldPassword.equals(user.getPassword())) {
-            return ResponseEntity.badRequest().body("Mật khẩu cũ không đúng");
-        }
-
-        if (oldPassword.equals(newPassword)) {
-            return ResponseEntity.badRequest().body("Mật khẩu mới không được giống mật khẩu cũ");
-        }
-
-        user.setPassword(newPassword); // Lưu mật khẩu plain text (không khuyến khích)
+        user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
-        return ResponseEntity.ok("Đổi mật khẩu thành công");
+
+        return ResponseEntity.ok(new LoginResponse(messageHelper.get("login.success"), true));
     }
 
-   public ResponseEntity<?> editProfile(String email, EditProfileRequest request, MultipartFile avatarFile) {
-       User user = userRepository.findByEmail(email)
-               .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
+    public ResponseEntity<String> changePassword(ChangePasswordRequest request) {
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
 
-       if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
-           user.setUsername(request.getUsername());
-       }
+        if (!request.getOldPassword().equals(user.getPassword())) {
+            throw new IllegalArgumentException(messageHelper.get("old.password.incorrect"));
+        }
 
-       if (avatarFile != null && !avatarFile.isEmpty()) {
-           try {
-               String fileName = System.currentTimeMillis() + "_" + avatarFile.getOriginalFilename();
-               Path uploadPath = Paths.get(AVATAR_UPLOAD_DIR + fileName);
-               Files.createDirectories(uploadPath.getParent());
-               Files.copy(avatarFile.getInputStream(), uploadPath);
-               user.setAvatar(fileName); // Lưu tên file chính xác
-               System.out.println("Uploaded file: " + fileName); // Debug: Kiểm tra tên file
-           } catch (IOException e) {
-               return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi upload avatar: " + e.getMessage());
-           }
-       } else if (user.getAvatar() == null) {
-           user.setAvatar(DEFAULT_AVATAR); // Gán mặc định nếu chưa có avatar
-       }
+        if (request.getOldPassword().equals(request.getNewPassword())) {
+            throw new IllegalArgumentException(messageHelper.get("new.password.same"));
+        }
 
-       userRepository.save(user);
+        user.setPassword(request.getNewPassword());
+        userRepository.save(user);
+        return ResponseEntity.ok(messageHelper.get("password.change.success"));
+    }
 
-       Map<String, String> response = new HashMap<>();
-       response.put("message", "Cập nhật thông tin thành công");
-       response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
-       return ResponseEntity.ok(response);
-   }
+    public ResponseEntity<UserResponse> editProfile(long userId, EditProfileRequest request, MultipartFile avatarFile) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
 
-   public ResponseEntity<?> getProfile(String email) {
-       User user = userRepository.findByEmail(email)
-               .orElseThrow(() -> new UsernameNotFoundException("Người dùng không tồn tại"));
-       Map<String, Object> response = new HashMap<>();
-       response.put("username", user.getUsername() != null ? user.getUsername() : "");
-       response.put("avatar", user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
-       return ResponseEntity.ok(response);
-   }
+        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+            if (!request.getUsername().equals(user.getUsername()) && existsByUsername(request.getUsername())) {
+                throw new DuplicateException(messageHelper.get("username.exists"));
+            }
+            user.setUsername(request.getUsername());
+        }
+
+        if (avatarFile != null && !avatarFile.isEmpty()) {
+            if (avatarFile.getSize() > MAX_FILE_SIZE) {
+                throw new IllegalArgumentException(messageHelper.get("file.size.limit"));
+            }
+            if (!ALLOWED_FILE_TYPES.contains(avatarFile.getContentType())) {
+                throw new IllegalArgumentException(messageHelper.get("file.type.unsupported"));
+            }
+            try {
+                String fileName = UUID.randomUUID() + "_" + avatarFile.getOriginalFilename();
+                Path uploadPath = Paths.get(AVATAR_UPLOAD_DIR, fileName);
+                Files.createDirectories(uploadPath.getParent());
+                Files.copy(avatarFile.getInputStream(), uploadPath);
+                user.setAvatar(fileName);
+            } catch (IOException e) {
+                throw new RuntimeException(messageHelper.get("avatar.upload.failed") + ": " + e.getMessage(), e);
+            }
+        }
+
+        userRepository.save(user);
+        return ResponseEntity.ok(toUserResponse(user));
+    }
+
+    public ResponseEntity<UserResponse> getProfile(long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+        return ResponseEntity.ok(toUserResponse(user));
+    }
+
+    private UserResponse toUserResponse(User user) {
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setUsername(user.getUsername());
+        response.setEmail(user.getEmail());
+        response.setAvatar(user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
+        return response;
+    }
 }

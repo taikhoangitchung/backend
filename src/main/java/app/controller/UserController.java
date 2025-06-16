@@ -33,8 +33,7 @@ public class UserController {
 
     @PatchMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        userService.login(loginRequest);
-        return ResponseEntity.ok(messageHelper.get("login.success"));
+        return ResponseEntity.ok().body(userService.login(loginRequest));
     }
 
     @GetMapping

@@ -17,4 +17,7 @@ public class RegisterRequest {
     @NotBlank(message = "{password.required}")
     @Size(min = 6, message = "{password.length}")
     private String password;
+
+    @NotBlank(message = "{confirm.password.required}")
+    private String confirmPassword;
 }

@@ -36,7 +36,7 @@ public class UserService {
     @Value("${upload.url.prefix}")
     private String urlPrefix;
 
-    @Value("${default.avatar")
+    @Value("${default.avatar}")
     private String defaultAvatar;
 
     public List<User> findAllExceptAdminSortByCreateAt() {

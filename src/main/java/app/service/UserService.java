@@ -9,19 +9,15 @@ import app.mapper.RegisterMapper;
 import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
-
 import org.springframework.web.multipart.MultipartFile;
-
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +32,7 @@ public class UserService {
     @Value("${upload.url.prefix}")
     private String urlPrefix;
 
-    @Value("${default.avatar")
+    @Value("${default.avatar}")
     private String defaultAvatar;
 
     public List<User> findAllExceptAdminSortByCreateAt() {
@@ -56,19 +52,27 @@ public class UserService {
 
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
-
     }
 
     public void register(RegisterRequest registerRequest) {
         String username = registerRequest.getUsername();
         String email = registerRequest.getEmail();
+        String password = registerRequest.getPassword();
+        String confirmPassword = registerRequest.getConfirmPassword();
+
+        // Kiểm tra password và confirmPassword
+        if (!password.equals(confirmPassword)) {
+            throw new NotMatchException(messageHelper.get("password.confirm.not.match"));
+        }
+
         if (username == null || username.trim().isEmpty()) {
             registerRequest.setUsername(email); // Nếu không có username, sử dụng email làm username
         }
 
-        if (existsByEmail(registerRequest.getEmail())) {
+        if (existsByEmail(email)) {
             throw new DuplicateException(messageHelper.get("email.exist"));
         }
+
         User user = registerMapper.toEntity(registerRequest);
         user.setAvatar(defaultAvatar); // Gán avatar mặc định khi đăng ký
         user.setCreateAt(LocalDateTime.now()); // Thiết lập thời gian tạo
@@ -91,7 +95,6 @@ public class UserService {
 
         user.setLastLogin(LocalDateTime.now()); // Cập nhật thời gian đăng nhập
         userRepository.save(user); // Lưu lại thông tin người dùng
-        // Thêm logic để tạo token hoặc session nếu cần thiết
     }
 
     public void changePassword(ChangePasswordRequest changePasswordRequest) {

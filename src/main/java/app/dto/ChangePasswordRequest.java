@@ -1,5 +1,6 @@
 package app.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,6 +8,8 @@ import lombok.Setter;
 @Setter
 public class ChangePasswordRequest {
     private String email;
+    @NotBlank(message = "{old.password.required}")
     private String oldPassword;
+    @NotBlank(message = "{new.password.required}")
     private String newPassword;
 }

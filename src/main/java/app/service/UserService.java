@@ -77,7 +77,7 @@ public class UserService {
         }
 
         if (existsByEmail(email)) {
-            throw new DuplicateException(messageHelper.get("email.exist"));
+            throw new DuplicateException(messageHelper.get("email.exists"));
         }
 
         User user = registerMapper.toEntity(registerRequest);

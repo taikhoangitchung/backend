@@ -22,6 +22,9 @@ public class User {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(nullable = false)
+    private boolean isAdmin = false;
+
     @Column(unique = true)
     private String email;
 

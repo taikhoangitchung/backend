@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,7 @@ public class TypeController {
     private final MessageHelper messageHelper;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> addType(@Valid @RequestBody AddTypeRequest request,
                                      BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -27,6 +29,7 @@ public class TypeController {
         typeService.addType(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("type.create.success"));
     }
+
     @GetMapping
     public ResponseEntity<?> getAll() {
         return ResponseEntity.ok().body(typeService.getAllTypes());

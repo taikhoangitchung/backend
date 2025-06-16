@@ -26,6 +26,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final RegisterMapper registerMapper;
     private final MessageHelper messageHelper;
+    private final JwtService jwtService;
 
     @Value("${upload.directory}")
     private String uploadDirectory;
@@ -85,7 +86,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void login(LoginRequest loginRequest) {
+    public String login(LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
 
@@ -101,6 +102,7 @@ public class UserService {
 
         user.setLastLogin(LocalDateTime.now()); // Cập nhật thời gian đăng nhập
         userRepository.save(user); // Lưu lại thông tin người dùng
+        return jwtService.generateToken(user);
     }
 
     public void changePassword(ChangePasswordRequest changePasswordRequest) {

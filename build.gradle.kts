@@ -40,6 +40,8 @@ dependencies {
 
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 
+	implementation("org.springframework.boot:spring-boot-starter-mail")
+
 	implementation ("org.springframework.boot:spring-boot-devtools")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

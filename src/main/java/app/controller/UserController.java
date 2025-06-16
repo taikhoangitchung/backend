@@ -8,6 +8,7 @@ import app.util.BindingHandler;
 import app.util.MessageHelper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -49,7 +50,8 @@ public class UserController {
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<?> removeUser(@PathVariable long userId) {
-        return ResponseEntity.ok(userService.removeUser(userId));
+        userService.removeUser(userId);
+        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("delete.success"));
     }
 
     @PatchMapping("/change-password")

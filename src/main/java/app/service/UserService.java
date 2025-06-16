@@ -46,12 +46,17 @@ public class UserService {
     }
 
     public List<User> searchFollowNameAndEmail(String keyName, String keyEmail) {
-        return userRepository.searchFollowNameAndEmail(keyName, keyEmail);
+        List<User> users = userRepository.searchFollowNameAndEmail(keyName, keyEmail);
+        users.sort(Comparator.comparing(User::getLastLogin).reversed());
+        return users;
     }
 
-    public boolean removeUser(long userId) {
-        userRepository.deleteById(userId);
-        return !userRepository.existsById(userId);
+    public void removeUser(long userId) {
+        if (userRepository.existsById(userId)) {
+            userRepository.deleteById(userId);
+        } else {
+            throw new NotFoundException(messageHelper.get("user.not.found"));
+        }
     }
 
     public boolean existsByEmail(String email) {

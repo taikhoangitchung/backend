@@ -42,4 +42,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> uploadExceptionHandler(UploadException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(EmailException.class)
+    public ResponseEntity<?> emailExceptionHandler(EmailException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

@@ -10,6 +10,7 @@ import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +33,10 @@ public class QuestionService {
     @Transactional
     public void addQuestion(AddQuestionRequest request) {
         Question question = new Question();
-        question.setUser(userRepository.findByUsername(adminUsername));
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User foundUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+        question.setUser(foundUser);
         question.setCategory(categoryRepository.findByName(request.getCategory()));
         question.setType(typeRepository.findByName(request.getType()));
         question.setDifficulty(difficultyRepository.findByName(request.getDifficulty()));
@@ -68,26 +72,39 @@ public class QuestionService {
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("question.not.found")));
     }
 
+    @Transactional
     public void update(EditQuestionRequest request, long id) {
         Question question = findById(id);
         if (!question.getExams().isEmpty()) {
             throw new LockedException(messageHelper.get("question.update.conflict"));
         }
 
+
         Category category = categoryRepository.findByName(request.getCategory());
+        if (category == null) {
+            throw new NotFoundException(messageHelper.get("category.not.found"));
+        }
         Type type = typeRepository.findByName(request.getType());
+        if (type == null) {
+            throw new NotFoundException(messageHelper.get("type.not.found"));
+        }
         Difficulty difficulty = difficultyRepository.findByName(request.getDifficulty());
+        if (difficulty == null) {
+            throw new NotFoundException(messageHelper.get("difficulty.not.found"));
+        }
+
+        answerRepository.deleteAllByQuestionId(id);
 
         question.setCategory(category);
         question.setType(type);
         question.setDifficulty(difficulty);
         question.setContent(request.getContent());
 
+        question.getAnswers().clear();
         for (Answer item : request.getAnswers()) {
             item.setQuestion(question);
+            question.getAnswers().add(item);
         }
-        question.setAnswers(request.getAnswers());
-
         questionRepository.save(question);
     }
 

@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -124,13 +125,24 @@ public class UserService {
         if (avatarFile != null && !avatarFile.isEmpty()) {
             try {
                 String fileName = avatarFile.getOriginalFilename();
+                if (fileName == null || fileName.trim().isEmpty()) {
+                    throw new UploadException(messageHelper.get("file.name.invalid"));
+                }
                 Path uploadPath = Paths.get(uploadDirectory, fileName);
+                // Nếu file đã tồn tại, thêm timestamp để tạo tên duy nhất
+                if (Files.exists(uploadPath)) {
+                    String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+                    String fileExt = fileName.substring(fileName.lastIndexOf('.'));
+                    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+                    fileName = fileNameWithoutExt + "_" + timestamp + fileExt;
+                    uploadPath = Paths.get(uploadDirectory, fileName);
+                }
                 Files.createDirectories(uploadPath.getParent());
                 Files.copy(avatarFile.getInputStream(), uploadPath);
                 user.setAvatar(urlPrefix + fileName);
                 userRepository.save(user);
             } catch (IOException e) {
-                throw new UploadException(messageHelper.get("file.upload.error"));
+                throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
             }
         }
     }

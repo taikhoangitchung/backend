@@ -3,8 +3,8 @@ package app.service;
 import app.dto.AddOrUpdateCategoryRequest;
 import app.dto.CategoryResponse;
 import app.entity.Category;
-import app.exception.DeleteException;
 import app.exception.DuplicateException;
+import app.exception.LockedException;
 import app.exception.NotFoundException;
 import app.repository.CategoryRepository;
 import app.repository.QuestionRepository;
@@ -48,7 +48,7 @@ public class CategoryService {
             throw new NotFoundException(messageHelper.get("category.not.found"));
         }
         if (questionRepository.existsByCategoryId(id)) {
-            throw new DeleteException(messageHelper.get("category.has.questions"));
+            throw new LockedException(messageHelper.get("category.has.questions"));
         }
         categoryRepository.deleteById(id);
     }
@@ -57,6 +57,7 @@ public class CategoryService {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("category.not.found")));
     }
+
     public void update(Long id, AddOrUpdateCategoryRequest request) {
         Category category = getCategoryById(id);
         if (categoryRepository.existsByNameAndIdNot(request.getName(), id)) {

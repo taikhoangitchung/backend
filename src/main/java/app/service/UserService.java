@@ -1,64 +1,48 @@
 package app.service;
 
-import app.dto.*;
+import app.dto.ChangePasswordRequest;
+import app.dto.LoginRequest;
+import app.dto.RegisterRequest;
 import app.entity.User;
-import app.exception.AuthException;
-import app.exception.DuplicateException;
-import app.exception.NotFoundException;
+import app.exception.*;
 import app.mapper.RegisterMapper;
 import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.multipart.MultipartFile;
 
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
-
-    public final UserRepository userRepository;
+    private final UserRepository userRepository;
     private final RegisterMapper registerMapper;
     private final MessageHelper messageHelper;
 
-    @Value("${app.upload.dir:uploads/media/}")
-    private String AVATAR_UPLOAD_DIR;
-    private static final String BASE_URL = "http://localhost:8080";
-    private static final String DEFAULT_AVATAR = "default-avatar.png";
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    private static final List<String> ALLOWED_FILE_TYPES = List.of("image/jpeg", "image/png");
+    @Value("${upload.directory}")
+    private String uploadDirectory;
 
-    public boolean existsByUsername(String username) {
-        if (username == null || username.trim().isEmpty()) {
-            throw new IllegalArgumentException(messageHelper.get("username.required"));
-        }
-        return userRepository.existsByUsername(username);
-    }
+    @Value("${upload.url.prefix}")
+    private String urlPrefix;
 
-    public boolean existsByEmail(String email) {
-        if (email == null || email.trim().isEmpty()) {
-            throw new IllegalArgumentException(messageHelper.get("email.required"));
-        }
-        return userRepository.existsByEmail(email);
-    }
+    @Value("${default.avatar")
+    private String defaultAvatar;
 
     public List<User> findAllExceptAdminSortByCreateAt() {
         List<User> users = userRepository.findAllExceptAdmin();
         users.sort(Comparator.comparing(User::getLastLogin).reversed());
         return users;
-    }
-
-    public boolean isAdmin(long userId) {
-        return userRepository.isAdmin(userId);
     }
 
     public List<User> searchFollowNameAndEmail(String keyName, String keyEmail) {
@@ -70,115 +54,90 @@ public class UserService {
         return !userRepository.existsById(userId);
     }
 
-    public ResponseEntity<UserResponse> register(RegisterRequest registerRequest) {
-        if (registerRequest == null) {
-            throw new IllegalArgumentException(messageHelper.get("invalid.request.data"));
-        }
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
 
+    }
+
+    public void register(RegisterRequest registerRequest) {
         String username = registerRequest.getUsername();
+        String email = registerRequest.getEmail();
         if (username == null || username.trim().isEmpty()) {
-            username = registerRequest.getEmail().split("@")[0];
-            registerRequest.setUsername(username);
+            registerRequest.setUsername(email); // Nếu không có username, sử dụng email làm username
         }
 
         if (existsByEmail(registerRequest.getEmail())) {
-            throw new DuplicateException(messageHelper.get("email.exists"));
+            throw new DuplicateException(messageHelper.get("email.exist"));
         }
-        if (existsByUsername(registerRequest.getUsername())) {
-            throw new DuplicateException(messageHelper.get("username.exists"));
-        }
-
-        try {
-            User user = registerMapper.toEntity(registerRequest);
-            user.setAvatar(DEFAULT_AVATAR);
-            user.setCreateAt(LocalDateTime.now());
-            userRepository.save(user);
-            return ResponseEntity.status(HttpStatus.CREATED).body(toUserResponse(user));
-        } catch (Exception e) {
-            throw new RuntimeException(messageHelper.get("register.failed") + ": " + e.getMessage(), e);
-        }
+        User user = registerMapper.toEntity(registerRequest);
+        user.setAvatar(defaultAvatar); // Gán avatar mặc định khi đăng ký
+        user.setCreateAt(LocalDateTime.now()); // Thiết lập thời gian tạo
+        userRepository.save(user);
     }
 
-    public ResponseEntity<LoginResponse> login(LoginRequest loginRequest) {
-        if (loginRequest == null || loginRequest.getEmail() == null || loginRequest.getPassword() == null) {
-            throw new IllegalArgumentException(messageHelper.get("invalid.login.data"));
+    public void login(LoginRequest loginRequest) {
+        String email = loginRequest.getEmail();
+        String password = loginRequest.getPassword();
+
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            throw new AuthException(messageHelper.get("email.not.exist"));
         }
 
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("email.not.exist")));
-
-        if (!loginRequest.getPassword().equals(user.getPassword())) {
+        User user = userOptional.get();
+        if (!password.equals(user.getPassword())) {
             throw new AuthException(messageHelper.get("password.incorrect"));
         }
 
-        user.setLastLogin(LocalDateTime.now());
-        userRepository.save(user);
-
-        return ResponseEntity.ok(new LoginResponse(messageHelper.get("login.success"), true));
+        user.setLastLogin(LocalDateTime.now()); // Cập nhật thời gian đăng nhập
+        userRepository.save(user); // Lưu lại thông tin người dùng
+        // Thêm logic để tạo token hoặc session nếu cần thiết
     }
 
-    public ResponseEntity<String> changePassword(ChangePasswordRequest request) {
-        User user = userRepository.findById(request.getUserId())
+    public void changePassword(ChangePasswordRequest changePasswordRequest) {
+        User user = userRepository.findByEmail(changePasswordRequest.getEmail())
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
 
-        if (!request.getOldPassword().equals(user.getPassword())) {
-            throw new IllegalArgumentException(messageHelper.get("old.password.incorrect"));
+        if (!changePasswordRequest.getOldPassword().equals(user.getPassword())) {
+            throw new NotMatchException(messageHelper.get("password.old.not.match"));
         }
 
-        if (request.getOldPassword().equals(request.getNewPassword())) {
-            throw new IllegalArgumentException(messageHelper.get("new.password.same"));
+        if (changePasswordRequest.getNewPassword().equals(user.getPassword())) {
+            throw new SameAsOldException(messageHelper.get("password.new.match.old"));
         }
 
-        user.setPassword(request.getNewPassword());
+        user.setPassword(changePasswordRequest.getNewPassword());
         userRepository.save(user);
-        return ResponseEntity.ok(messageHelper.get("password.change.success"));
     }
 
-    public ResponseEntity<UserResponse> editProfile(long userId, EditProfileRequest request, MultipartFile avatarFile) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+    public void editProfile(String email, String username, MultipartFile avatarFile) {
+        User user = userRepository.findByEmail(email).orElseThrow(
+                () -> new NotFoundException(messageHelper.get("user.not.found")));
 
-        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
-            if (!request.getUsername().equals(user.getUsername()) && existsByUsername(request.getUsername())) {
-                throw new DuplicateException(messageHelper.get("username.exists"));
-            }
-            user.setUsername(request.getUsername());
+        if (username != null && !username.trim().isEmpty()) {
+            user.setUsername(username);
         }
 
         if (avatarFile != null && !avatarFile.isEmpty()) {
-            if (avatarFile.getSize() > MAX_FILE_SIZE) {
-                throw new IllegalArgumentException(messageHelper.get("file.size.limit"));
-            }
-            if (!ALLOWED_FILE_TYPES.contains(avatarFile.getContentType())) {
-                throw new IllegalArgumentException(messageHelper.get("file.type.unsupported"));
-            }
             try {
-                String fileName = UUID.randomUUID() + "_" + avatarFile.getOriginalFilename();
-                Path uploadPath = Paths.get(AVATAR_UPLOAD_DIR, fileName);
+                String fileName = avatarFile.getOriginalFilename();
+                Path uploadPath = Paths.get(uploadDirectory, fileName);
                 Files.createDirectories(uploadPath.getParent());
                 Files.copy(avatarFile.getInputStream(), uploadPath);
-                user.setAvatar(fileName);
+                user.setAvatar(urlPrefix + fileName);
+                userRepository.save(user);
             } catch (IOException e) {
-                throw new RuntimeException(messageHelper.get("avatar.upload.failed") + ": " + e.getMessage(), e);
+                throw new UploadException(messageHelper.get("file.upload.error"));
             }
         }
-
-        userRepository.save(user);
-        return ResponseEntity.ok(toUserResponse(user));
     }
 
-    public ResponseEntity<UserResponse> getProfile(long userId) {
-        User user = userRepository.findById(userId)
+    public Map<String, Object> getProfile(String email) {
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
-        return ResponseEntity.ok(toUserResponse(user));
-    }
-
-    private UserResponse toUserResponse(User user) {
-        UserResponse response = new UserResponse();
-        response.setId(user.getId());
-        response.setUsername(user.getUsername());
-        response.setEmail(user.getEmail());
-        response.setAvatar(user.getAvatar() != null ? BASE_URL + "/media/" + user.getAvatar() : BASE_URL + "/media/" + DEFAULT_AVATAR);
+        Map<String, Object> response = new HashMap<>();
+        response.put("username", user.getUsername());
+        response.put("avatar", user.getAvatar());
         return response;
     }
 }

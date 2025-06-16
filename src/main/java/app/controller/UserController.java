@@ -1,13 +1,15 @@
 package app.controller;
 
 import app.dto.ChangePasswordRequest;
-import app.dto.EditProfileRequest;
 import app.dto.LoginRequest;
 import app.dto.RegisterRequest;
 import app.service.UserService;
+import app.util.BindingHandler;
+import app.util.MessageHelper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,17 +17,23 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
-
     private final UserService userService;
+    private final MessageHelper messageHelper;
 
-    @PostMapping
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        return userService.register(registerRequest);
+    @PostMapping("/register")
+    public ResponseEntity<?> processRegister(@Valid @RequestBody RegisterRequest registerRequest,
+                                             BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
+        }
+        userService.register(registerRequest);
+        return ResponseEntity.ok(messageHelper.get("register.success"));
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
-        return userService.login(loginRequest);
+    @PatchMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        userService.login(loginRequest);
+        return ResponseEntity.ok(messageHelper.get("login.success"));
     }
 
     @GetMapping
@@ -33,14 +41,9 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllExceptAdminSortByCreateAt());
     }
 
-    @GetMapping("/is-admin/{userId}")
-    public ResponseEntity<?> isAdmin(@PathVariable long userId) {
-        return ResponseEntity.ok(userService.isAdmin(userId));
-    }
-
     @GetMapping("/search")
     public ResponseEntity<?> search(@RequestParam(required = false) String keyName,
-                                                      @RequestParam(required = false) String keyEmail) {
+                                    @RequestParam(required = false) String keyEmail) {
         return ResponseEntity.ok(userService.searchFollowNameAndEmail(keyName, keyEmail));
     }
 
@@ -49,19 +52,23 @@ public class UserController {
         return ResponseEntity.ok(userService.removeUser(userId));
     }
 
-    @PatchMapping("/{userId}/password")
-    public ResponseEntity<?> changePassword(@PathVariable long userId, @Valid @RequestBody ChangePasswordRequest request) {
-        return userService.changePassword(request);
+    @PatchMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+        userService.changePassword(request);
+        return ResponseEntity.ok(messageHelper.get("update.success"));
     }
 
-    @PutMapping("/{userId}")
-    public ResponseEntity<?> editProfile(@PathVariable long userId, @Valid @RequestPart EditProfileRequest request,
-                                         @RequestPart(value = "avatar", required = false) MultipartFile avatarFile) {
-        return userService.editProfile(userId, request, avatarFile);
+    @PatchMapping("/edit")
+    public ResponseEntity<?> editProfile(
+            @RequestParam("email") String email,
+            @RequestParam("username") String username,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatarFile) {
+        userService.editProfile(email, username, avatarFile);
+        return ResponseEntity.ok(messageHelper.get("update.success"));
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<?> getProfile(@PathVariable long userId) {
-        return userService.getProfile(userId);
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(@RequestParam("email") String email) {
+        return ResponseEntity.ok().body(userService.getProfile(email));
     }
 }

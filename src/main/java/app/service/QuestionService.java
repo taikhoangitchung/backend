@@ -4,16 +4,16 @@ import app.dto.AddQuestionRequest;
 import app.dto.EditQuestionRequest;
 import app.dto.QuestionResponse;
 import app.entity.*;
-import app.exception.DeleteException;
+import app.exception.LockedException;
 import app.exception.NotFoundException;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,10 +26,13 @@ public class QuestionService {
     private final DifficultyRepository difficultyRepository;
     private final MessageHelper messageHelper;
 
+    @Value("${admin.username}")
+    private String adminUsername;
+
     @Transactional
     public void addQuestion(AddQuestionRequest request) {
         Question question = new Question();
-        question.setUser(userRepository.findByUsername("admin"));
+        question.setUser(userRepository.findByUsername(adminUsername));
         question.setCategory(categoryRepository.findByName(request.getCategory()));
         question.setType(typeRepository.findByName(request.getType()));
         question.setDifficulty(difficultyRepository.findByName(request.getDifficulty()));
@@ -41,8 +44,10 @@ public class QuestionService {
         questionRepository.save(question);
     }
 
-    @Transactional
     public List<QuestionResponse> findByUserId(long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException(messageHelper.get("user.not.found"));
+        }
         List<Question> questions = questionRepository.findByUserId(userId);
         return questions.stream()
                 .map(question -> {
@@ -60,25 +65,18 @@ public class QuestionService {
 
     public Question findById(long id) {
         return questionRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("question.notFound")));
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("question.not.found")));
     }
 
-
     public void update(EditQuestionRequest request, long id) {
-        Question question = questionRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("question.notFound")));
-
+        Question question = findById(id);
         if (!question.getExams().isEmpty()) {
-            throw new DeleteException(messageHelper.get("question.update.conflict"));
+            throw new LockedException(messageHelper.get("question.update.conflict"));
         }
 
         Category category = categoryRepository.findByName(request.getCategory());
         Type type = typeRepository.findByName(request.getType());
         Difficulty difficulty = difficultyRepository.findByName(request.getDifficulty());
-
-        if (category == null || type == null || difficulty == null) {
-            throw new RuntimeException(messageHelper.get("question.update.error"));
-        }
 
         question.setCategory(category);
         question.setType(type);
@@ -94,11 +92,10 @@ public class QuestionService {
     }
 
     public void delete(long id) {
-        Question question = questionRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("question.notFound")));
+        Question question = findById(id);
 
         if (!question.getExams().isEmpty()) {
-            throw new DeleteException(messageHelper.get("question.delete.conflict"));
+            throw new LockedException(messageHelper.get("question.delete.conflict"));
         }
 
         questionRepository.delete(question);

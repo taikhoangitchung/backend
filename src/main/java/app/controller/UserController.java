@@ -3,6 +3,7 @@ package app.controller;
 import app.dto.ChangePasswordRequest;
 import app.dto.LoginRequest;
 import app.dto.RegisterRequest;
+import app.dto.ResetPasswordRequest;
 import app.service.UserService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;
@@ -73,5 +74,17 @@ public class UserController {
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(@RequestParam("email") String email) {
         return ResponseEntity.ok().body(userService.getProfile(email));
+    }
+
+    @GetMapping("/check-token/{token}")
+    public ResponseEntity<?> toResetPassword(@PathVariable String token) {
+        if (userService.isValidResetToken(token)) return ResponseEntity.ok(true);
+        else return ResponseEntity.ok().body(messageHelper.get("expired.url"));
+    }
+
+    @PatchMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        userService.resetPassword(request.getEmail(), request.getPassword(), request.getToken());
+        return ResponseEntity.ok().body(messageHelper.get("reset.password.success"));
     }
 }

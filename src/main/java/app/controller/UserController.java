@@ -64,7 +64,7 @@ public class UserController {
     @PatchMapping("/edit")
     public ResponseEntity<?> editProfile(
             @RequestParam("email") String email,
-            @RequestParam("username") String username,
+            @RequestParam(value = "username", required = false) String username,
             @RequestParam(value = "avatar", required = false) MultipartFile avatarFile) {
         userService.editProfile(email, username, avatarFile);
         return ResponseEntity.ok(messageHelper.get("update.success"));

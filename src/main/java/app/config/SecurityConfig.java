@@ -28,7 +28,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/users/login"
                                 , "/users/register"
-                                , "/users/logout")
+                                , "/users/logout"
+                                , "/email/send"
+                                , "/users/check-token/**"
+                                , "/users/reset-password")
                         .permitAll()
                         .anyRequest().authenticated()
                 )

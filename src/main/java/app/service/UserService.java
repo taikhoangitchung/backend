@@ -150,9 +150,9 @@ public class UserService {
                 throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
             }
         } else {
-            // Nếu không có avatar mới, giữ nguyên avatar hiện tại hoặc gán default nếu null
+            // Giữ nguyên avatar hiện tại, không thay đổi nếu không có tệp mới
             if (user.getAvatar() == null) {
-                user.setAvatar(defaultAvatar);
+                user.setAvatar(defaultAvatar); // Gán avatar mặc định nếu chưa có
             }
         }
 

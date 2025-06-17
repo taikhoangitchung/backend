@@ -44,9 +44,7 @@ public class UserService {
     }
 
     public List<User> searchFollowNameAndEmail(String keyName, String keyEmail) {
-        List<User> users = userRepository.searchFollowNameAndEmail(keyName, keyEmail);
-        users.sort(Comparator.comparing(User::getLastLogin).reversed());
-        return users;
+        return userRepository.searchFollowNameAndEmail(keyName, keyEmail);
     }
 
     public void blockUser(long userId) {

@@ -23,6 +23,6 @@ public class EmailController {
                                        @RequestParam String subject,
                                        @RequestParam String text) {
         emailService.sendEmail(to, subject, text);
-        return ResponseEntity.ok(messageHelper.get("send.mail.success"));
+        return ResponseEntity.ok(messageHelper.get("send.email.success"));
     }
 }

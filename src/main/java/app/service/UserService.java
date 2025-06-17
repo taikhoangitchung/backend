@@ -165,6 +165,7 @@ public class UserService {
         Map<String, Object> response = new HashMap<>();
         response.put("username", user.getUsername());
         response.put("avatar", user.getAvatar());
+        response.put("createdAt", user.getCreateAt());
         return response;
     }
 }

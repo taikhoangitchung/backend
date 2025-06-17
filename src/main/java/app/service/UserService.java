@@ -11,6 +11,7 @@ import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +19,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -49,12 +51,10 @@ public class UserService {
         return users;
     }
 
-    public void removeUser(long userId) {
-        if (userRepository.existsById(userId)) {
-            userRepository.deleteById(userId);
-        } else {
-            throw new NotFoundException(messageHelper.get("user.not.found"));
-        }
+    public void blockUser(long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+        user.setActive(false);
+        userRepository.save(user);
     }
 
     public boolean existsByEmail(String email) {

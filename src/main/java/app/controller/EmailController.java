@@ -20,7 +20,7 @@ public class EmailController {
     private EmailService emailService;
     private final MessageHelper messageHelper;
 
-    @PostMapping("/send")
+    @PostMapping("/send-announce")
     public ResponseEntity<?> sendAnnounce(@RequestBody SendAnnounceRequest request) {
         emailService.sendAnnounce(request.getTo(), request.getSubject(), request.getHtml());
         return ResponseEntity.ok(messageHelper.get("send.mail.success"));

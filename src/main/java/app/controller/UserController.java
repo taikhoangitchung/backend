@@ -48,9 +48,9 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<?> removeUser(@PathVariable long userId) {
-        userService.removeUser(userId);
-        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("delete.success"));
+    public ResponseEntity<?> blockUser(@PathVariable long userId) {
+        userService.blockUser(userId);
+        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("block.success"));
     }
 
     @PatchMapping("/change-password")

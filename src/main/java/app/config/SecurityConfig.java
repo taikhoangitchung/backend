@@ -30,7 +30,9 @@ public class SecurityConfig {
                                 , "/users/register"
                                 , "/users/logout"
                                 , "/media/**"
-                        )
+                                , "/email/send"
+                                , "/users/check-token/**"
+                                , "/users/reset-password")
                         .permitAll()
                         .anyRequest().authenticated()
                 )

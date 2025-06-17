@@ -13,14 +13,7 @@ public class UserRequest {
             message = "{password.invalid}")
     private String password;
 
-    @NotBlank(message = "{fullName.required}")
-    @Pattern(regexp = "^[\\p{L} .'-]+$", message = "{fullName.invalid}")
-    private String fullName;
-
     @NotBlank(message = "{email.required}")
     @Email(message = "{email.invalid}")
     private String email;
-
-    @Pattern(regexp = "^0\\d{9,10}$", message = "{phone.invalid}")
-    private String phone;
 }

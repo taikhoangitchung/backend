@@ -122,13 +122,15 @@ public class UserService {
     }
 
     public void editProfile(String email, String username, MultipartFile avatarFile) {
-        User user = userRepository.findByEmail(email).orElseThrow(
-                () -> new NotFoundException(messageHelper.get("user.not.found")));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
 
+        // Cập nhật username nếu có
         if (username != null && !username.trim().isEmpty()) {
             user.setUsername(username);
         }
 
+        // Xử lý avatar
         if (avatarFile != null && !avatarFile.isEmpty()) {
             try {
                 String fileName = avatarFile.getOriginalFilename();
@@ -136,7 +138,6 @@ public class UserService {
                     throw new UploadException(messageHelper.get("file.name.invalid"));
                 }
                 Path uploadPath = Paths.get(uploadDirectory, fileName);
-                // Nếu file đã tồn tại, thêm timestamp để tạo tên duy nhất
                 if (Files.exists(uploadPath)) {
                     String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
                     String fileExt = fileName.substring(fileName.lastIndexOf('.'));
@@ -147,11 +148,17 @@ public class UserService {
                 Files.createDirectories(uploadPath.getParent());
                 Files.copy(avatarFile.getInputStream(), uploadPath);
                 user.setAvatar(urlPrefix + fileName);
-                userRepository.save(user);
             } catch (IOException e) {
                 throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
             }
+        } else {
+            // Nếu không có avatar mới, giữ nguyên avatar hiện tại hoặc gán default nếu null
+            if (user.getAvatar() == null) {
+                user.setAvatar(defaultAvatar);
+            }
         }
+
+        userRepository.save(user);
     }
 
     public Map<String, Object> getProfile(String email) {

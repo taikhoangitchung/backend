@@ -10,7 +10,6 @@ import java.util.List;
 
 import java.util.Optional;
 
-
 public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByIsAdminFalseOrderByCreateAtAsc();
 
@@ -20,7 +19,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             "(:keyEmail IS NULL OR u.email LIKE CONCAT('%', :keyEmail, '%'))")
     List<User> searchFollowNameAndEmail(@Param("keyName") String keyName,
                                         @Param("keyEmail") String keyEmail);
-
 
     Optional<User> findByEmail(String email);
 

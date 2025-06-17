@@ -56,9 +56,16 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void resetPassword(String email, String password, String token) {
+    public boolean isDuplicatePassword(String email, String password) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+        return password.equals(user.getPassword());
+    }
+
+    public void recoverPassword(String email, String password, String token) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+
         user.setPassword(password);
         userRepository.save(user);
 

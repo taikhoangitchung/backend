@@ -22,7 +22,6 @@ public class EmailService {
             message.setSubject(subject);
             message.setText(body);
             message.setFrom("quizizzgym@gmail.com");
-
             mailSender.send(message);
         } catch (Exception e) {
             throw new EmailException("Failed to send email \n:" + e);

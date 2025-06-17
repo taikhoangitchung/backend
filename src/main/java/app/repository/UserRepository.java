@@ -12,12 +12,15 @@ import java.util.Optional;
 
 
 public interface UserRepository extends JpaRepository<User, Long> {
-    @Query("SELECT u FROM User u WHERE u.active = false")
-    List<User> findAllExceptAdmin();
+    List<User> findByIsAdminFalseOrderByCreateAtAsc();
 
-    @Query("SELECT u FROM User u WHERE ((:keyName IS NULL OR u.username LIKE %:keyName%) " +
-            "AND (:keyEmail IS NULL OR u.email LIKE %:keyEmail%))")
-    List<User> searchFollowNameAndEmail(@Param("keyName") String keyName,@Param("keyEmail") String keyEmail);
+    @Query("SELECT u FROM User u WHERE " +
+            "u.isAdmin = false AND " +
+            "(:keyName IS NULL OR u.username LIKE CONCAT('%', :keyName, '%')) AND " +
+            "(:keyEmail IS NULL OR u.email LIKE CONCAT('%', :keyEmail, '%'))")
+    List<User> searchFollowNameAndEmail(@Param("keyName") String keyName,
+                                        @Param("keyEmail") String keyEmail);
+
 
     Optional<User> findByEmail(String email);
 

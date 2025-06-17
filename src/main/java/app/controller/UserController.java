@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +38,7 @@ public class UserController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userService.findAllExceptAdminSortByCreateAt());
     }
@@ -47,7 +49,7 @@ public class UserController {
         return ResponseEntity.ok(userService.searchFollowNameAndEmail(keyName, keyEmail));
     }
 
-    @DeleteMapping("/{userId}")
+    @PatchMapping("/{userId}/block")
     public ResponseEntity<?> blockUser(@PathVariable long userId) {
         userService.blockUser(userId);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("block.success"));

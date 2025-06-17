@@ -40,9 +40,7 @@ public class UserService {
     private String defaultAvatar;
 
     public List<User> findAllExceptAdminSortByCreateAt() {
-        List<User> users = userRepository.findAllExceptAdmin();
-        users.sort(Comparator.comparing(User::getLastLogin).reversed());
-        return users;
+        return userRepository.findByIsAdminFalseOrderByCreateAtAsc();
     }
 
     public List<User> searchFollowNameAndEmail(String keyName, String keyEmail) {

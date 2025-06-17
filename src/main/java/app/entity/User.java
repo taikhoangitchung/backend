@@ -23,7 +23,7 @@ public class User {
     private boolean active = true;
 
     @Column(nullable = false)
-    private boolean isAdmin = false;
+    private boolean isAdmin;
 
     @Column(unique = true)
     private String email;

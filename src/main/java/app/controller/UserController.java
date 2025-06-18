@@ -90,13 +90,13 @@ public class UserController {
 
     @PatchMapping("/recover-password")
     public ResponseEntity<?> recoverPassword(@Valid @RequestBody RecoverPasswordRequest request) {
-        userService.recoverPassword(request.getEmail(), request.getPassword(), request.getToken());
+        userService.recoverPassword(request);
         return ResponseEntity.ok().body(messageHelper.get("reset.password.success"));
     }
 
     @PatchMapping("/check-duplicate")
     public ResponseEntity<?> checkDuplicatePassword(@RequestBody RecoverPasswordRequest request) {;
-        boolean isDuplicate = userService.isDuplicatePassword(request.getEmail(), request.getPassword());
+        boolean isDuplicate = userService.isDuplicatePassword(request);
         CheckDuplicatePasswordResponse duplicateResponse = new CheckDuplicatePasswordResponse();
         duplicateResponse.setDuplicate(isDuplicate);
         duplicateResponse.setMessage(isDuplicate ? messageHelper.get("password.duplicate") : "");

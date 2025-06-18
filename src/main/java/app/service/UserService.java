@@ -2,6 +2,7 @@ package app.service;
 
 import app.dto.ChangePasswordRequest;
 import app.dto.LoginRequest;
+import app.dto.RecoverPasswordRequest;
 import app.dto.RegisterRequest;
 import app.entity.PasswordRecoverToken;
 import app.entity.User;
@@ -56,20 +57,20 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public boolean isDuplicatePassword(String email, String password) {
-        User user = userRepository.findByEmail(email)
+    public boolean isDuplicatePassword(RecoverPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
-        return password.equals(user.getPassword());
+        return request.getPassword().equals(user.getPassword());
     }
 
-    public void recoverPassword(String email, String password, String token) {
-        User user = userRepository.findByEmail(email)
+    public void recoverPassword(RecoverPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
 
-        user.setPassword(password);
+        user.setPassword(request.getPassword());
         userRepository.save(user);
 
-        PasswordRecoverToken resetToken = tokenRepository.findByToken(token);
+        PasswordRecoverToken resetToken = tokenRepository.findByToken(request.getToken());
         tokenRepository.deleteById(resetToken.getId());
     }
 

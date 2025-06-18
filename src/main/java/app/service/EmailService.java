@@ -37,7 +37,6 @@ public class EmailService {
 
             if (tokenRepository.existsByUser(user)) {
                 PasswordRecoverToken resetToken = tokenRepository.findByUser(user);
-                System.err.println(resetToken.getId());
                 tokenRepository.deleteById(resetToken.getId());
             }
 

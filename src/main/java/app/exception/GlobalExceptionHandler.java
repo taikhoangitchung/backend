@@ -47,4 +47,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> emailExceptionHandler(EmailException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(ExpiredException.class)
+    public ResponseEntity<?> expiredExceptionHandler(ExpiredException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

@@ -3,9 +3,11 @@ package app.service;
 import app.dto.ChangePasswordRequest;
 import app.dto.LoginRequest;
 import app.dto.RegisterRequest;
+import app.entity.PasswordResetToken;
 import app.entity.User;
 import app.exception.*;
 import app.mapper.RegisterMapper;
+import app.repository.TokenRepository;
 import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final RegisterMapper registerMapper;
     private final MessageHelper messageHelper;
+    private final TokenRepository tokenRepository;
     private final JwtService jwtService;
 
     @Value("${upload.directory}")
@@ -51,6 +54,32 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
         user.setActive(false);
         userRepository.save(user);
+    }
+
+    public boolean isDuplicatePassword(String email, String password) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+        return password.equals(user.getPassword());
+    }
+
+    public void recoverPassword(String email, String password, String token) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+
+        user.setPassword(password);
+        userRepository.save(user);
+
+        PasswordResetToken resetToken = tokenRepository.findByToken(token);
+        tokenRepository.deleteById(resetToken.getId());
+    }
+
+    public boolean isValidResetToken(String token) {
+        try {
+            PasswordResetToken resetToken = tokenRepository.findByToken(token);
+            return resetToken != null && !LocalDateTime.now().isAfter(resetToken.getExpiryDate());
+        } catch (Exception e) {
+            throw new ExpiredException(messageHelper.get("expired.url"));
+        }
     }
 
     public boolean existsByEmail(String email) {

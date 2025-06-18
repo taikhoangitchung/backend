@@ -1,8 +1,6 @@
 package app.controller;
 
-import app.dto.ChangePasswordRequest;
-import app.dto.LoginRequest;
-import app.dto.RegisterRequest;
+import app.dto.*;
 import app.service.UserService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;
@@ -54,6 +52,7 @@ public class UserController {
     public ResponseEntity<?> blockUser(@PathVariable long userId) {
         userService.blockUser(userId);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("block.user.success"));
+
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -81,5 +80,26 @@ public class UserController {
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(@RequestParam("email") String email) {
         return ResponseEntity.ok().body(userService.getProfile(email));
+    }
+
+    @GetMapping("/check-token/{token}")
+    public ResponseEntity<?> toResetPassword(@PathVariable String token) {
+        if (userService.isValidResetToken(token)) return ResponseEntity.ok(true);
+        else return ResponseEntity.ok().body(messageHelper.get("expired.url"));
+    }
+
+    @PatchMapping("/recover-password")
+    public ResponseEntity<?> recoverPassword(@RequestBody ResetPasswordRequest request) {
+        userService.recoverPassword(request.getEmail(), request.getPassword(), request.getToken());
+        return ResponseEntity.ok().body(messageHelper.get("reset.password.success"));
+    }
+
+    @PatchMapping("/check-duplicate")
+    public ResponseEntity<?> checkDuplicatePassword(@RequestBody ResetPasswordRequest request) {;
+        boolean isDuplicate = userService.isDuplicatePassword(request.getEmail(), request.getPassword());
+        CheckDuplicatePasswordResponse duplicateResponse = new CheckDuplicatePasswordResponse();
+        duplicateResponse.setDuplicate(isDuplicate);
+        duplicateResponse.setMessage(isDuplicate ? messageHelper.get("password.duplicate") : "");
+        return ResponseEntity.ok().body(duplicateResponse);
     }
 }

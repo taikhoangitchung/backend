@@ -203,4 +203,10 @@ public class UserService {
         response.put("createdAt", user.getCreateAt());
         return response;
     }
+
+    public void unblockUser(long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+        user.setActive(true);
+        userRepository.save(user);
+    }
 }

@@ -47,10 +47,19 @@ public class UserController {
         return ResponseEntity.ok(userService.searchFollowNameAndEmail(keyName, keyEmail));
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping("/{userId}/block")
     public ResponseEntity<?> blockUser(@PathVariable long userId) {
         userService.blockUser(userId);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("block.user.success"));
+
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PatchMapping("/{userId}/unblock")
+    public ResponseEntity<?> unblockUser(@PathVariable long userId) {
+        userService.unblockUser(userId);
+        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("unblock.user.success"));
     }
 
     @PatchMapping("/change-password")

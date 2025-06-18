@@ -31,8 +31,10 @@ public class SecurityConfig {
                                 , "/users/logout"
                                 , "/media/**"
                                 , "/email/send"
+                                , "/email/send-code"
                                 , "/users/check-token/**"
-                                , "/users/reset-password")
+                                , "/users/recover-password"
+                                , "/users/check-duplicate")
                         .permitAll()
                         .anyRequest().authenticated()
                 )

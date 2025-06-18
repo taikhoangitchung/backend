@@ -74,19 +74,19 @@ public class UserController {
     }
 
     @GetMapping("/check-token/{token}")
-    public ResponseEntity<?> toResetPassword(@PathVariable String token) {
-        if (userService.isValidResetToken(token)) return ResponseEntity.ok(true);
+    public ResponseEntity<?> toRecoverPassword(@PathVariable String token) {
+        if (userService.isValidRecoverToken(token)) return ResponseEntity.ok(true);
         else return ResponseEntity.ok().body(messageHelper.get("expired.url"));
     }
 
     @PatchMapping("/recover-password")
-    public ResponseEntity<?> recoverPassword(@RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<?> recoverPassword(@Valid @RequestBody RecoverPasswordRequest request) {
         userService.recoverPassword(request.getEmail(), request.getPassword(), request.getToken());
         return ResponseEntity.ok().body(messageHelper.get("reset.password.success"));
     }
 
     @PatchMapping("/check-duplicate")
-    public ResponseEntity<?> checkDuplicatePassword(@RequestBody ResetPasswordRequest request) {;
+    public ResponseEntity<?> checkDuplicatePassword(@RequestBody RecoverPasswordRequest request) {;
         boolean isDuplicate = userService.isDuplicatePassword(request.getEmail(), request.getPassword());
         CheckDuplicatePasswordResponse duplicateResponse = new CheckDuplicatePasswordResponse();
         duplicateResponse.setDuplicate(isDuplicate);

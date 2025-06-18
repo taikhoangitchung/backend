@@ -3,7 +3,7 @@ package app.service;
 import app.dto.ChangePasswordRequest;
 import app.dto.LoginRequest;
 import app.dto.RegisterRequest;
-import app.entity.PasswordResetToken;
+import app.entity.PasswordRecoverToken;
 import app.entity.User;
 import app.exception.*;
 import app.mapper.RegisterMapper;
@@ -69,14 +69,22 @@ public class UserService {
         user.setPassword(password);
         userRepository.save(user);
 
-        PasswordResetToken resetToken = tokenRepository.findByToken(token);
+        PasswordRecoverToken resetToken = tokenRepository.findByToken(token);
         tokenRepository.deleteById(resetToken.getId());
     }
 
-    public boolean isValidResetToken(String token) {
+    public boolean isValidRecoverToken(String token) {
         try {
-            PasswordResetToken resetToken = tokenRepository.findByToken(token);
-            return resetToken != null && !LocalDateTime.now().isAfter(resetToken.getExpiryDate());
+            System.err.println(token);
+            PasswordRecoverToken resetToken = tokenRepository.findByToken(token);
+            if (resetToken != null) {
+                if (!LocalDateTime.now().isAfter(resetToken.getExpiryDate())) {
+                    return true;
+                } else {
+                    tokenRepository.deleteById(resetToken.getId());
+                }
+            }
+            return false;
         } catch (Exception e) {
             throw new ExpiredException(messageHelper.get("expired.url"));
         }

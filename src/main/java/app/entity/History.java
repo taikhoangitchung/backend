@@ -4,32 +4,25 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Entity
 @Setter
 @Getter
-public class Exam {
+public class History {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;
+    @ManyToOne
+    @JoinColumn(nullable = false)
+    private User user;
 
     @ManyToOne
     @JoinColumn(nullable = false)
-    private User author;
+    private Exam exam;
 
-    @ManyToOne
-    @JoinColumn(nullable = false)
-    private Difficulty difficulty;
+    private long score;
 
-    @OneToMany
-    private List<Question> questions;
+    private long timeTaken;
 
-    private long duration;
-
-    private long passScore;
-
-    private long playedTimes;
+    private boolean passed;
 }

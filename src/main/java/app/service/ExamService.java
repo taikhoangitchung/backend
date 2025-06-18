@@ -10,7 +10,6 @@ import app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -28,10 +27,8 @@ public class ExamService {
 
         Exam exam = new Exam();
         exam.setTitle(request.getTitle());
-        exam.setDescription(request.getDescription());
         exam.setAuthor(author);
         exam.setQuestions(questions);
-        exam.setDateCreated(LocalDate.now());
         examRepository.save(exam);
     }
 }

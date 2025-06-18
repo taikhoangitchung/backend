@@ -22,19 +22,19 @@ public class EmailController {
 
     @PostMapping("/send-announce")
     public ResponseEntity<?> sendAnnounce(@RequestBody SendAnnounceRequest request) {
-        emailService.sendAnnounce(request.getTo(), request.getSubject(), request.getHtml());
+        emailService.sendAnnounce(request);
         return ResponseEntity.ok(messageHelper.get("send.mail.success"));
     }
 
     @PostMapping("/send")
     public ResponseEntity<?> sendToRecoverPassword(@RequestBody EmailRequest request) {
-        emailService.sendToRecoverPassword(request.getTo(), request.getSubject(), request.getHtml(), request.getToken());
+        emailService.sendToRecoverPassword(request);
         return ResponseEntity.ok(messageHelper.get("send.mail.success"));
     }
 
     @PostMapping("/send-code")
     public ResponseEntity<?> sendCode(@RequestBody SendCodeRequest request) {
-        emailService.sendCode(request.getTo(), request.getSubject(), request.getHtml());
+        emailService.sendCode(request);
         return ResponseEntity.ok(messageHelper.get("send.mail.success"));
     }
 }

@@ -1,6 +1,9 @@
 package app.service;
 
-import app.entity.PasswordResetToken;
+import app.dto.EmailRequest;
+import app.dto.SendAnnounceRequest;
+import app.dto.SendCodeRequest;
+import app.entity.PasswordRecoverToken;
 import app.entity.User;
 import app.exception.EmailException;
 import app.exception.NotFoundException;
@@ -27,38 +30,45 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final MessageHelper messageHelper;
 
-    public void sendToRecoverPassword(String to, String subject, String html, String token) {
+    public void sendToRecoverPassword(EmailRequest request) {
         try {
-            User user = userRepository.findByEmail(to)
+            User user = userRepository.findByEmail(request.getTo())
                     .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
-            LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
 
-            PasswordResetToken resetToken = new PasswordResetToken();
-            resetToken.setToken(token);
+            if (tokenRepository.existsByUser(user)) {
+                PasswordRecoverToken resetToken = tokenRepository.findByUser(user);
+                System.err.println(resetToken.getId());
+                tokenRepository.deleteById(resetToken.getId());
+            }
+
+            LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
+            PasswordRecoverToken resetToken = new PasswordRecoverToken();
+            resetToken.setToken(request.getToken());
             resetToken.setUser(user);
             resetToken.setExpiryDate(expiryDate);
 
             tokenRepository.save(resetToken);
 
-            send(to, subject, html);
+            send(request.getTo(), request.getSubject(), request.getHtml());
         } catch (Exception e) {
-            throw new EmailException("Lỗi khi gửi Email \n" + e);
+            throw new EmailException("Lỗi khi gửi Email: " + e.getMessage());
         }
     }
 
-    public void sendCode(String to, String subject, String html) {
+    public void sendCode(SendCodeRequest request) {
         try {
-            send(to, subject, html);
+            send(request.getTo(), request.getSubject(), request.getHtml());
         } catch (Exception e) {
-            throw new EmailException("Lỗi khi gửi Code \n" + e);
+            throw new EmailException("Lỗi khi gửi Code: " + e.getMessage());
         }
     }
 
-    public void sendAnnounce(String to, String subject, String html) {
+    public void sendAnnounce(SendAnnounceRequest request) {
         try {
-            send(to, subject, html);
+            userRepository.findByEmail(request.getTo()).orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+            send(request.getTo(), request.getSubject(), request.getHtml());
         } catch (Exception e) {
-            throw new EmailException("Lỗi khi gửi thông báo \n" + e);
+            throw new EmailException("Lỗi khi gửi thông báo: " + e.getMessage());
         }
     }
 

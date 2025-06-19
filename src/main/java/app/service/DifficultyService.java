@@ -1,6 +1,6 @@
 package app.service;
 
-import app.dto.AddDifficultyRequest;
+import app.dto.difficulty.AddDifficultyRequest;
 import app.entity.Difficulty;
 import app.exception.DuplicateException;
 import app.repository.DifficultyRepository;

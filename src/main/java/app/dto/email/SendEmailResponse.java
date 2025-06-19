@@ -1,4 +1,4 @@
-package app.dto;
+package app.dto.email;
 
 import lombok.Getter;
 import lombok.Setter;

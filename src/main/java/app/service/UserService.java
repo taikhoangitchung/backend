@@ -1,9 +1,9 @@
 package app.service;
 
-import app.dto.ChangePasswordRequest;
-import app.dto.LoginRequest;
-import app.dto.RecoverPasswordRequest;
-import app.dto.RegisterRequest;
+import app.dto.user.ChangePasswordRequest;
+import app.dto.user.LoginRequest;
+import app.dto.user.RecoverPasswordRequest;
+import app.dto.user.RegisterRequest;
 import app.entity.PasswordRecoverToken;
 import app.entity.User;
 import app.exception.*;

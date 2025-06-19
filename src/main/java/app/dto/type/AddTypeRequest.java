@@ -1,4 +1,4 @@
-package app.dto;
+package app.dto.type;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

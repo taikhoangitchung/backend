@@ -1,4 +1,4 @@
-package app.dto;
+package app.dto.user;
 
 import lombok.Getter;
 import lombok.Setter;

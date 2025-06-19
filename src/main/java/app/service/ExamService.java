@@ -1,15 +1,10 @@
 package app.service;
 
-import app.dto.CreateExamRequest;
-import app.dto.ExamCardResponse;
+import app.dto.exam.ExamCardResponse;
 import app.dto.exam.PlayExamResponse;
 import app.entity.Exam;
-import app.entity.Question;
-import app.entity.User;
 import app.exception.NotFoundException;
 import app.repository.ExamRepository;
-import app.repository.QuestionRepository;
-import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

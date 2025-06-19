@@ -22,6 +22,10 @@ public class Exam {
 
     @ManyToOne
     @JoinColumn(nullable = false)
+    private Category category;
+
+    @ManyToOne
+    @JoinColumn(nullable = false)
     private Difficulty difficulty;
 
     @ManyToMany

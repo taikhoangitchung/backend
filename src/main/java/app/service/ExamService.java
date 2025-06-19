@@ -1,6 +1,7 @@
 package app.service;
 
 import app.dto.CreateExamRequest;
+import app.dto.ExamCardResponse;
 import app.entity.Exam;
 import app.entity.Question;
 import app.entity.User;
@@ -30,5 +31,17 @@ public class ExamService {
         exam.setAuthor(author);
         exam.setQuestions(questions);
         examRepository.save(exam);
+    }
+
+    public List<ExamCardResponse> getExamsByCategory(Long categoryId) {
+        List<Exam> exams = examRepository.findByCategoryId(categoryId);
+        return exams.stream().map(exam ->
+            new ExamCardResponse(
+                exam.getId(),
+                exam.getTitle(),
+                exam.getPlayedTimes(),
+                exam.getQuestions() != null ? exam.getQuestions().size() : 0
+            )
+        ).toList();
     }
 }

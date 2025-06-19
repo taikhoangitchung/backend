@@ -5,10 +5,7 @@ import app.service.HistoryService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/histories")
@@ -19,7 +16,6 @@ public class HistoryController {
 
     @PostMapping
     public ResponseEntity<?> addHistory(@RequestBody AddHistoryRequest request) {
-        historyService.add(request);
-        return ResponseEntity.ok().body(messageHelper.get("history.added"));
+        return ResponseEntity.ok().body(historyService.submitAndEvaluate(request));
     }
 }

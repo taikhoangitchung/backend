@@ -1,5 +1,6 @@
 package app.service;
 
+import app.dto.exam.ExamCardResponse;
 import app.dto.exam.CreateExamRequest;
 import app.dto.ExamCardResponse;
 import app.dto.exam.PlayExamResponse;
@@ -54,12 +55,14 @@ public class ExamService {
     public List<ExamCardResponse> getExamsByCategory(Long categoryId) {
         List<Exam> exams = examRepository.findByCategoryId(categoryId);
         return exams.stream().map(exam ->
-                new ExamCardResponse(
-                        exam.getId(),
-                        exam.getTitle(),
-                        exam.getPlayedTimes(),
-                        exam.getQuestions() != null ? exam.getQuestions().size() : 0
-                )
+            new ExamCardResponse(
+                exam.getId(),
+                exam.getTitle(),
+                exam.getPlayedTimes(),
+                exam.getQuestions() != null ? exam.getQuestions().size() : 0
+                , exam.getDifficulty()
+
+            )
         ).toList();
     }
 }

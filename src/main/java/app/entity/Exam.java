@@ -24,10 +24,6 @@ public class Exam {
     @JoinColumn(nullable = false)
     private Difficulty difficulty;
 
-    @ManyToOne
-    @JoinColumn(nullable = false)
-    private Category category;
-
     @ManyToMany
     @JoinTable(
             name = "exam_question",

@@ -15,17 +15,16 @@ public class History {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn( nullable = false)
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "exam_id", nullable = false)
+    @JoinColumn(nullable = false)
     private Exam exam;
 
-    private long score;
     private long timeTaken;
     private boolean passed;
 
-    @Column(name = "finished_at")
+    @Column
     private LocalDateTime finishedAt;
 }

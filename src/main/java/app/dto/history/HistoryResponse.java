@@ -1,22 +1,21 @@
 package app.dto.history;
 
-import app.dto.exam.SubmittedQuestion;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Setter
 @Getter
+@Setter
 public class HistoryResponse {
     private Long id;
-    private String title;
+    private String examTitle;
     private LocalDateTime finishedAt;
-    private long timeTaken;
-    private long score;
-    private long attempts;
-    private boolean passed;
+    private String timeTakenFormatted;
+    private float scorePercentage;
+    private int attemptNumber;
     private String username;
-    private List<SubmittedQuestion> questions;
+    private boolean passed;
+    private List<QuestionDetailResponse> questions;
 }

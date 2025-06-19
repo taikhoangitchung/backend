@@ -1,25 +1,40 @@
 package app.controller;
 
-import app.dto.history.AddHistoryRequest;
+import app.dto.history.HistoryResponse;
 import app.service.HistoryService;
-import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/histories")
 @RequiredArgsConstructor
 public class HistoryController {
     private final HistoryService historyService;
-    private final MessageHelper messageHelper;
 
-    @PostMapping
-    public ResponseEntity<?> addHistory(@RequestBody AddHistoryRequest request) {
-        historyService.add(request);
-        return ResponseEntity.ok().body(messageHelper.get("history.added"));
+    @GetMapping
+    public ResponseEntity<Page<HistoryResponse>> getHistory(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Long userId = extractUserId(authentication);
+        Page<HistoryResponse> historyPage = historyService.getHistoryByUser(userId, page, size);
+        return ResponseEntity.ok(historyPage);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<HistoryResponse> getHistoryDetail(
+            Authentication authentication,
+            @PathVariable Long id) {
+        Long userId = extractUserId(authentication);
+        HistoryResponse historyDetail = historyService.getHistoryDetail(userId, id);
+        return ResponseEntity.ok(historyDetail);
+    }
+
+    private Long extractUserId(Authentication authentication) {
+        // Giả định lấy userId từ JWT claims hoặc service
+        return 2L; // Thay bằng logic thực tế
     }
 }

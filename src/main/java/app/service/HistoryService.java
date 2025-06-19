@@ -1,78 +1,90 @@
 package app.service;
 
-import app.dto.exam.SubmittedQuestion;
-import app.dto.history.AddHistoryRequest;
-import app.entity.*;
-import app.exception.NotFoundException;
-import app.repository.ExamRepository;
+import app.dto.history.HistoryResponse;
+import app.dto.history.QuestionDetailResponse;
+import app.entity.History;
+import app.entity.UserAnswer;
 import app.repository.HistoryRepository;
-import app.repository.QuestionRepository;
-import app.repository.UserRepository;
-import app.util.MessageHelper;
+import app.repository.UserAnswerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class HistoryService {
     private final HistoryRepository historyRepository;
-    private final MessageHelper messageHelper;
-    private final ExamRepository examRepository;
-    private final UserRepository userRepository;
-    private final QuestionRepository questionRepository;
+    private final UserAnswerRepository userAnswerRepository;
 
-    public void add(AddHistoryRequest request) {
-        Exam foundExam = examRepository.findById(request.getExamId())
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
-        User foundUser = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
-
-        History history = new History();
-        history.setExam(foundExam);
-        history.setUser(foundUser);
-        history.setTimeTaken(request.getTimeTaken());
-        history.setFinishedAt(LocalDateTime.parse(request.getFinishedAt()));
-        history.setScore(calculateScore(request.getQuestions()));
-        historyRepository.save(history);
+    public Page<HistoryResponse> getHistoryByUser(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<History> historyPage = historyRepository.findByUserIdOrderByFinishedAtDesc(userId, pageable);
+        return historyPage.map(this::convertToResponse);
     }
 
-    public int calculateScore(List<SubmittedQuestion> submittedQuestions) {
-        int correctCount = 0;
-
-        for (SubmittedQuestion item : submittedQuestions) {
-            Question savedQuestion = questionRepository.findById(item.getId())
-                    .orElseThrow(() -> new NotFoundException(messageHelper.get("question.not.found")));
-
-            List<Long> correctAnswerIds = savedQuestion.getAnswers().stream()
-                    .filter(Answer::getCorrect)
-                    .map(Answer::getId)
-                    .toList();
-
-            if (isCorrectChoice(item, savedQuestion.getType().getName(), correctAnswerIds)) {
-                correctCount++;
-            }
+    public HistoryResponse getHistoryDetail(Long userId, Long historyId) {
+        History history = historyRepository.findByIdAndUserId(historyId, userId);
+        if (history == null) {
+            throw new IllegalArgumentException("Không tìm thấy lịch sử bài thi hoặc bạn không có quyền truy cập.");
         }
-        return correctCount;
+        HistoryResponse response = convertToResponse(history);
+        response.setQuestions(getQuestionDetails(historyId));
+        return response;
     }
 
-    private static boolean isCorrectChoice(SubmittedQuestion submittedQuestion, String type, List<Long> correctAnswerIds) {
-        List<Long> submittedAnswerIds = submittedQuestion.getAnswerIds() != null
-                ? submittedQuestion.getAnswerIds()
-                : List.of();
+    private HistoryResponse convertToResponse(History history) {
+        HistoryResponse response = new HistoryResponse();
+        response.setId(history.getId());
+        response.setExamTitle(history.getExam().getTitle());
+        response.setFinishedAt(history.getFinishedAt());
+        response.setTimeTakenFormatted(formatTimeTaken(history.getTimeTaken()));
+        response.setScorePercentage(calculateScorePercentage(history));
+        response.setUsername(history.getUser().getUsername());
+        response.setPassed(history.isPassed());
 
-        boolean isCorrect;
+        List<History> allAttempts = historyRepository.findByExamIdAndUserId(history.getExam().getId(), history.getUser().getId());
+        allAttempts.sort(Comparator.comparing(History::getFinishedAt));
+        int attemptNumber = allAttempts.indexOf(history) + 1;
+        response.setAttemptNumber(attemptNumber);
 
-        if ("multiple".equalsIgnoreCase(type)) {
-            isCorrect = new HashSet<>(submittedAnswerIds).equals(new HashSet<>(correctAnswerIds));
-        } else {
-            isCorrect = !submittedAnswerIds.isEmpty() && correctAnswerIds.contains(submittedAnswerIds.get(0));
+        response.setQuestions(getQuestionDetails(history.getId()));
+        return response;
+    }
+
+    private float calculateScorePercentage(History history) {
+        long correctAnswers = getCorrectAnswersCount(history.getId());
+        long totalQuestions = (history.getExam() != null && history.getExam().getQuestions() != null) ? history.getExam().getQuestions().size() : 0;
+        return totalQuestions > 0 ? (float) (correctAnswers * 100) / totalQuestions : 0.0f;
+    }
+
+    private long getCorrectAnswersCount(Long historyId) {
+        if (historyId == null) return 0;
+        return userAnswerRepository.countCorrectAnswersByHistoryId(historyId);
+    }
+
+    private List<QuestionDetailResponse> getQuestionDetails(Long historyId) {
+        List<UserAnswer> userAnswers = userAnswerRepository.findByHistoryId(historyId);
+        List<QuestionDetailResponse> questions = new ArrayList<>();
+        for (UserAnswer ua : userAnswers) {
+            QuestionDetailResponse qdr = new QuestionDetailResponse();
+            qdr.setId(ua.getQuestion().getId());
+            qdr.setContent(ua.getQuestion().getContent());
+            qdr.setCorrectAnswers(ua.getCorrectAnswerIds());
+            qdr.setSelectedAnswers(ua.getSelectedAnswerIds());
+            questions.add(qdr);
         }
-        return isCorrect;
+        return questions;
     }
 
-
+    private String formatTimeTaken(long seconds) {
+        long minutes = seconds / 60;
+        long remainingSeconds = seconds % 60;
+        return String.format("%02d:%02d", minutes, remainingSeconds);
+    }
 }

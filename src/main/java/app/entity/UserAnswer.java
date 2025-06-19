@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Entity
 @Getter
 @Setter
@@ -15,11 +13,11 @@ public class UserAnswer {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "history_id")
+    @JoinColumn(name = "history_id", nullable = false)
     private History history;
 
     @ManyToOne
-    @JoinColumn(name = "question_id")
+    @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
     @Column(name = "selected_answer_ids")
@@ -27,14 +25,4 @@ public class UserAnswer {
 
     @Column(name = "correct_answer_ids")
     private String correctAnswerIds;
-
-    private int score;
-
-    @ManyToMany
-    @JoinTable(
-            name = "user_answer_answer",
-            joinColumns = @JoinColumn(name = "user_answer_id"),
-            inverseJoinColumns = @JoinColumn(name = "answer_id")
-    )
-    private List<Answer> answers; // Danh sách đáp án
 }

@@ -15,4 +15,9 @@ public class ExamController {
     public ResponseEntity<?> getToPlayById(@PathVariable Long id) {
         return ResponseEntity.ok(examService.getToPlayById(id));
     }
+
+    @GetMapping("/categories/{categoryId}/exams")
+    public ResponseEntity<?> getExamsByCategory(@PathVariable Long categoryId) {
+        return ResponseEntity.ok(examService.getExamsByCategory(categoryId));
+    }
 }

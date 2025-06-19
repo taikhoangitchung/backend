@@ -1,5 +1,7 @@
 package app.dto.exam;
 
+
+import app.entity.Difficulty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,4 +14,5 @@ public class ExamCardResponse {
     private String title;
     private long playedTimes;
     private int questionCount;
+    private Difficulty difficulty;
 }

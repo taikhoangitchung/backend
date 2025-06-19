@@ -35,6 +35,8 @@ public class ExamService {
                 exam.getTitle(),
                 exam.getPlayedTimes(),
                 exam.getQuestions() != null ? exam.getQuestions().size() : 0
+                , exam.getDifficulty()
+
             )
         ).toList();
     }

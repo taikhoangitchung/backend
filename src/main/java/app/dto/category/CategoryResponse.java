@@ -1,4 +1,4 @@
-package app.dto;
+package app.dto.category;
 
 import lombok.Getter;
 import lombok.Setter;

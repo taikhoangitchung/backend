@@ -41,6 +41,16 @@ public class ExamController {
         Page<HistoryDTO> historyPage = examService.getUserHistory(user, PageRequest.of(page, size));
         return ResponseEntity.ok(historyPage);
     }
+    @GetMapping("/{id}/play")
+    public ResponseEntity<?> getToPlayById(@PathVariable Long id) {
+        return ResponseEntity.ok(examService.getToPlayById(id));
+    }
+
+    @GetMapping("/categories/{categoryId}/exams")
+    public ResponseEntity<?> getExamsByCategory(@PathVariable Long categoryId) {
+        return ResponseEntity.ok(examService.getExamsByCategory(categoryId));
+    }
+}
 
     @GetMapping("/history/{historyId}/user/{userId}")
     public ResponseEntity<?> getExamHistoryDetail(@PathVariable Long historyId, @PathVariable Long userId) {

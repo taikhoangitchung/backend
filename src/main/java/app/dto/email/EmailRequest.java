@@ -1,12 +1,13 @@
-package app.dto;
+package app.dto.email;
 
 import lombok.Getter;
 import lombok.Setter;
 
-@Setter
 @Getter
-public class SendAnnounceRequest {
+@Setter
+public class EmailRequest {
     private String to;
     private String subject;
     private String html;
+    private String token;
 }

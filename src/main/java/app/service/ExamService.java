@@ -1,24 +1,16 @@
 package app.service;
 
 import app.dto.CreateExamRequest;
-import app.dto.HistoryDTO;
 import app.entity.Exam;
-import app.entity.History;
+import app.entity.Question;
 import app.entity.User;
-import app.entity.UserAnswer;
 import app.repository.ExamRepository;
-import app.repository.HistoryRepository;
-import app.repository.UserAnswerRepository;
+import app.repository.QuestionRepository;
 import app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +19,8 @@ public class ExamService {
     private final ExamRepository examRepository;
     private final HistoryRepository historyRepository;
     private final UserAnswerRepository userAnswerRepository;
+    private final ExamRepository examRepository;
+    private final MessageHelper messageHelper;
 
     @Transactional
     public void createExam(CreateExamRequest request) {
@@ -47,6 +41,26 @@ public class ExamService {
         history.setPassed(false); // Mặc định
         history.setCompletedAt(LocalDateTime.now());
         historyRepository.save(history);
+    public PlayExamResponse getToPlayById(Long id) {
+        Exam exam = examRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
+
+        PlayExamResponse response = new PlayExamResponse();
+        response.setDuration(exam.getDuration());
+        response.setQuestions(exam.getQuestions());
+        return response;
+    }
+
+    public List<ExamCardResponse> getExamsByCategory(Long categoryId) {
+        List<Exam> exams = examRepository.findByCategoryId(categoryId);
+        return exams.stream().map(exam ->
+            new ExamCardResponse(
+                exam.getId(),
+                exam.getTitle(),
+                exam.getPlayedTimes(),
+                exam.getQuestions() != null ? exam.getQuestions().size() : 0
+            )
+        ).toList();
     }
 
     public History getExamHistoryDetail(Long historyId, Long userId) {

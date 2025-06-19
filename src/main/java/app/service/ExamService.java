@@ -23,11 +23,6 @@ public class ExamService {
     private final ExamRepository examRepository;
     private final HistoryRepository historyRepository;
 
-    public History getExamHistoryDetail(Long userId, Long examId) {
-        return historyRepository.findByUserIdAndExamId(userId, examId)
-                .orElseThrow(() -> new RuntimeException("History not found"));
-    }
-
     @Transactional
     public void createExam(CreateExamRequest request) {
         // Tạo một bài thi mới
@@ -35,7 +30,6 @@ public class ExamService {
         exam.setTitle(request.getTitle());
         exam.setAuthor(userRepository.findById(request.getAuthorId())
                 .orElseThrow(() -> new RuntimeException("User not found")));
-        // Thiết lập các trường khác như difficulty, questions, duration, passScore nếu cần
         exam.setDuration(0); // Mặc định, cần điều chỉnh
         exam.setPassScore(0); // Mặc định, cần điều chỉnh
         exam.setPlayedTimes(0); // Mặc định
@@ -43,7 +37,7 @@ public class ExamService {
 
         // Tạo lịch sử thi ban đầu (nếu cần)
         History history = new History();
-        history.setUser(exam.getAuthor()); // Người tạo cũng là người thi lần đầu
+        history.setUser(exam.getAuthor());
         history.setExam(exam);
         history.setScore(0); // Mặc định
         history.setTimeTaken(0); // Mặc định
@@ -52,8 +46,12 @@ public class ExamService {
         historyRepository.save(history);
     }
 
+    public History getExamHistoryDetail(Long historyId, Long userId) {
+        return historyRepository.findByIdAndUserId(historyId, userId)
+                .orElseThrow(() -> new RuntimeException("History not found"));
+    }
+
     public Page<HistoryDTO> getUserHistory(User user, PageRequest pageRequest) {
-        // Logic hiện tại giữ nguyên
         Page<History> historyPage = historyRepository.findByUserOrderByCompletedAtDesc(user, pageRequest);
         return historyPage.map(history -> {
             HistoryDTO dto = new HistoryDTO();

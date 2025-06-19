@@ -15,5 +15,5 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
     @Query("SELECT COUNT(h) FROM History h WHERE h.user.id = :userId AND h.exam.id = :examId")
     long countAttemptsByUserIdAndExamId(Long userId, Long examId);
 
-    Optional<History> findByUserIdAndExamId(Long userId, Long examId);
+    Optional<History> findByIdAndUserId(Long id, Long userId);
 }

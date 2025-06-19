@@ -1,7 +1,7 @@
 package app.controller;
 
-import app.dto.AddQuestionRequest;
-import app.dto.EditQuestionRequest;
+import app.dto.question.AddQuestionRequest;
+import app.dto.question.EditQuestionRequest;
 import app.service.QuestionService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package app.service;
 
-import app.dto.AddTypeRequest;
+import app.dto.type.AddTypeRequest;
 import app.entity.Type;
 import app.exception.DuplicateException;
 import app.repository.TypeRepository;

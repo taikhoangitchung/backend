@@ -1,4 +1,4 @@
-package app.dto;
+package app.dto.question;
 
 import app.entity.Answer;
 import jakarta.validation.constraints.NotBlank;
@@ -9,7 +9,7 @@ import java.util.List;
 
 @Setter
 @Getter
-public class EditQuestionRequest {
+public class AddQuestionRequest {
     @NotBlank(message = "{category.required}")
     private String category;
 

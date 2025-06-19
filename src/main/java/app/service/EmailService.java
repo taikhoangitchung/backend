@@ -1,8 +1,8 @@
 package app.service;
 
-import app.dto.EmailRequest;
-import app.dto.SendAnnounceRequest;
-import app.dto.SendCodeRequest;
+import app.dto.email.EmailRequest;
+import app.dto.email.SendAnnounceRequest;
+import app.dto.email.SendCodeRequest;
 import app.entity.PasswordRecoverToken;
 import app.entity.User;
 import app.exception.EmailException;

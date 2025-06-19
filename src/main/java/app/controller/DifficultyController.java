@@ -1,6 +1,6 @@
 package app.controller;
 
-import app.dto.AddDifficultyRequest;
+import app.dto.difficulty.AddDifficultyRequest;
 import app.service.DifficultyService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;

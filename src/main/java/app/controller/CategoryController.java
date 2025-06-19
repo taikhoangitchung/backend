@@ -1,6 +1,6 @@
 package app.controller;
 
-import app.dto.AddOrUpdateCategoryRequest;
+import app.dto.category.AddOrUpdateCategoryRequest;
 import app.service.CategoryService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;

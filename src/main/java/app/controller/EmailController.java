@@ -1,8 +1,8 @@
 package app.controller;
 
-import app.dto.EmailRequest;
-import app.dto.SendAnnounceRequest;
-import app.dto.SendCodeRequest;
+import app.dto.email.EmailRequest;
+import app.dto.email.SendAnnounceRequest;
+import app.dto.email.SendCodeRequest;
 import app.service.EmailService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;

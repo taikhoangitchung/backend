@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Setter
 @Getter
@@ -25,4 +27,6 @@ public class History {
     private long timeTaken;
 
     private boolean passed;
+
+    private LocalDateTime finishedAt;
 }

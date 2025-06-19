@@ -1,7 +1,7 @@
 package app.service;
 
-import app.dto.AddOrUpdateCategoryRequest;
-import app.dto.CategoryResponse;
+import app.dto.category.AddOrUpdateCategoryRequest;
+import app.dto.category.CategoryResponse;
 import app.entity.Category;
 import app.exception.DuplicateException;
 import app.exception.LockedException;

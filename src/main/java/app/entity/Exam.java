@@ -32,7 +32,6 @@ public class Exam {
     )
     private List<Question> questions;
 
-
     private long duration;
 
     private long passScore;

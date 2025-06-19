@@ -1,6 +1,6 @@
 package app.controller;
 
-import app.dto.AddTypeRequest;
+import app.dto.type.AddTypeRequest;
 import app.service.TypeService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;

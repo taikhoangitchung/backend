@@ -4,20 +4,17 @@ import app.entity.History;
 import app.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface HistoryRepository extends JpaRepository<History, Long> {
-    Page<History> findByUserOrderByCompletedAtDesc(User user, Pageable pageable);
+    @EntityGraph(attributePaths = {"user", "exam", "userAnswers", "userAnswers.question", "userAnswers.answers"})
     List<History> findByUser(User user);
 
-    @Query("SELECT COUNT(h) FROM History h WHERE h.user.id = :userId AND h.exam.id = :examId")
-    long countAttemptsByUserIdAndExamId(Long userId, Long examId);
+    @EntityGraph(attributePaths = {"user", "exam", "userAnswers", "userAnswers.question", "userAnswers.answers"})
+    Page<History> findByUserOrderByFinishedAtDesc(User user, Pageable pageable);
 
-    Optional<History> findByIdAndUserId(Long id, Long userId);
-
-    List<Object> findAllByUserIdAndExamId(Long userId, Long id);
+    List<History> findAllByUserIdAndExamId(Long userId, Long examId);
 }

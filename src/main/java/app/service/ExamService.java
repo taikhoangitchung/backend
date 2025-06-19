@@ -1,16 +1,29 @@
 package app.service;
 
-import app.dto.CreateExamRequest;
+import app.dto.exam.CreateExamRequest;
+import app.dto.exam.SubmittedQuestion;
+import app.dto.history.HistoryResponse;
+import app.entity.Category;
 import app.entity.Exam;
-import app.entity.Question;
+import app.entity.History;
 import app.entity.User;
+import app.entity.UserAnswer;
+import app.repository.CategoryRepository;
 import app.repository.ExamRepository;
-import app.repository.QuestionRepository;
+import app.repository.HistoryRepository;
+import app.repository.UserAnswerRepository;
 import app.repository.UserRepository;
+import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,7 +32,7 @@ public class ExamService {
     private final ExamRepository examRepository;
     private final HistoryRepository historyRepository;
     private final UserAnswerRepository userAnswerRepository;
-    private final ExamRepository examRepository;
+    private final CategoryRepository categoryRepository;
     private final MessageHelper messageHelper;
 
     @Transactional
@@ -27,9 +40,14 @@ public class ExamService {
         Exam exam = new Exam();
         exam.setTitle(request.getTitle());
         exam.setAuthor(userRepository.findById(request.getAuthorId())
-                .orElseThrow(() -> new RuntimeException("User not found")));
-        exam.setDuration(0); // Mặc định, cần điều chỉnh
-        exam.setPassScore(0); // Mặc định, cần điều chỉnh
+                .orElseThrow(() -> new RuntimeException(messageHelper.get("user.not.found"))));
+
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new RuntimeException(messageHelper.get("category.not.found")));
+        exam.setCategory(category);
+
+        exam.setDuration(0); // Mặc định
+        exam.setPassScore(0); // Mặc định
         exam.setPlayedTimes(0); // Mặc định
         examRepository.save(exam);
 
@@ -39,83 +57,61 @@ public class ExamService {
         history.setScore(0); // Mặc định
         history.setTimeTaken(0); // Mặc định
         history.setPassed(false); // Mặc định
-        history.setCompletedAt(LocalDateTime.now());
+        history.setFinishedAt(LocalDateTime.now());
         historyRepository.save(history);
-    public PlayExamResponse getToPlayById(Long id) {
-        Exam exam = examRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
-
-        PlayExamResponse response = new PlayExamResponse();
-        response.setDuration(exam.getDuration());
-        response.setQuestions(exam.getQuestions());
-        return response;
-    }
-
-    public List<ExamCardResponse> getExamsByCategory(Long categoryId) {
-        List<Exam> exams = examRepository.findByCategoryId(categoryId);
-        return exams.stream().map(exam ->
-            new ExamCardResponse(
-                exam.getId(),
-                exam.getTitle(),
-                exam.getPlayedTimes(),
-                exam.getQuestions() != null ? exam.getQuestions().size() : 0
-            )
-        ).toList();
     }
 
     public History getExamHistoryDetail(Long historyId, Long userId) {
-        return historyRepository.findByIdAndUserId(historyId, userId)
-                .orElseThrow(() -> new RuntimeException("History not found"));
+        return historyRepository.findById(historyId)
+                .filter(history -> history.getUser().getId().equals(userId))
+                .orElseThrow(() -> new RuntimeException(messageHelper.get("history.not.found")));
     }
 
-    public Page<HistoryDTO> getUserHistory(User user, PageRequest pageRequest) {
-        Page<History> historyPage = historyRepository.findByUserOrderByCompletedAtDesc(user, pageRequest);
+    public Page<HistoryResponse> getUserHistory(User user, PageRequest pageRequest) {
+        Page<History> historyPage = historyRepository.findByUserOrderByFinishedAtDesc(user, pageRequest);
         List<History> allHistories = historyRepository.findByUser(user);
 
         return historyPage.map(history -> {
-            HistoryDTO dto = new HistoryDTO();
-            dto.setId(history.getId());
-            dto.setExamName(history.getExam().getTitle());
-            dto.setCompletedAt(history.getCompletedAt());
-            dto.setTimeTaken(history.getTimeTaken());
-            dto.setScore(history.getScore());
-
-            List<History> examHistories = allHistories.stream()
+            HistoryResponse response = new HistoryResponse();
+            response.setId(history.getId());
+            response.setTitle(history.getExam().getTitle());
+            response.setFinishedAt(history.getFinishedAt());
+            response.setTimeTaken(history.getTimeTaken());
+            response.setScore(history.getScore());
+            response.setAttempts(allHistories.stream()
                     .filter(h -> h.getExam().getId().equals(history.getExam().getId()))
-                    .sorted((h1, h2) -> h1.getCompletedAt().compareTo(h2.getCompletedAt()))
-                    .collect(Collectors.toList());
-            long attemptOrder = examHistories.indexOf(history) + 1;
-            dto.setAttempts(attemptOrder);
-            dto.setPassed(history.isPassed());
-            return dto;
+                    .sorted((h1, h2) -> h1.getFinishedAt().compareTo(h2.getFinishedAt()))
+                    .collect(Collectors.toList()).indexOf(history) + 1);
+            response.setPassed(history.isPassed());
+            response.setUsername(history.getUser().getUsername());
+            return response;
         });
     }
 
-    public HistoryDTO getHistoryDetailWithAnswers(Long historyId, Long userId) {
+    public HistoryResponse getHistoryDetailWithAnswers(Long historyId, Long userId) {
         History history = getExamHistoryDetail(historyId, userId);
-        HistoryDTO dto = new HistoryDTO();
-        dto.setId(history.getId());
-        dto.setExamName(history.getExam().getTitle());
-        dto.setCompletedAt(history.getCompletedAt());
-        dto.setTimeTaken(history.getTimeTaken());
-        dto.setScore(history.getScore());
-        dto.setAttempts(historyRepository.findAllByUserIdAndExamId(userId, history.getExam().getId()).indexOf(history) + 1);
-        dto.setPassed(history.isPassed());
+        HistoryResponse response = new HistoryResponse();
+        response.setId(history.getId());
+        response.setTitle(history.getExam().getTitle());
+        response.setFinishedAt(history.getFinishedAt());
+        response.setTimeTaken(history.getTimeTaken());
+        response.setScore(history.getScore());
+        response.setAttempts(historyRepository.findAllByUserIdAndExamId(userId, history.getExam().getId()).indexOf(history) + 1);
+        response.setPassed(history.isPassed());
+        response.setUsername(history.getUser().getUsername());
 
-        User user = history.getUser();
-        dto.setUsername(user.getUsername());
-
-        // Lấy lịch sử trả lời với quan hệ đầy đủ
         List<UserAnswer> userAnswers = userAnswerRepository.findByHistoryIdWithDetails(historyId);
-        // Force initialization of lazy-loaded collections
-        for (UserAnswer ua : userAnswers) {
-            if (ua.getQuestion() != null) {
-                ua.getQuestion().getAnswers().size(); // Ensure answers are loaded
-            }
-            ua.getAnswers().size(); // Ensure answers are loaded
-        }
-        dto.setUserAnswers(userAnswers);
+        List<SubmittedQuestion> questions = userAnswers.stream().map(ua -> {
+            SubmittedQuestion sq = new SubmittedQuestion();
+            sq.setId(ua.getQuestion().getId());
+            sq.setAnswerIds(ua.getSelectedAnswerIds() != null ?
+                    Arrays.stream(ua.getSelectedAnswerIds().split(","))
+                            .map(Long::parseLong)
+                            .collect(Collectors.toList()) : List.of());
+            return sq;
+        }).collect(Collectors.toList());
+        response.setQuestions(questions);
 
-        return dto;
+        return response;
     }
 }

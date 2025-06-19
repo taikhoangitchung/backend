@@ -1,7 +1,6 @@
 package app.controller;
 
-import app.dto.HistoryDTO;
-import app.entity.History;
+import app.dto.history.HistoryResponse;
 import app.entity.User;
 import app.repository.HistoryRepository;
 import app.repository.UserRepository;
@@ -24,7 +23,7 @@ public class ExamController {
     private final HistoryRepository historyRepository;
 
     @GetMapping("/history/user/{userId}")
-    public ResponseEntity<Page<HistoryDTO>> getUserHistory(
+    public ResponseEntity<Page<HistoryResponse>> getUserHistory(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -34,31 +33,21 @@ public class ExamController {
         }
         String email = principal.getName();
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("user.not.found"));
         if (!user.getEmail().equals(email)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        Page<HistoryDTO> historyPage = examService.getUserHistory(user, PageRequest.of(page, size));
+        Page<HistoryResponse> historyPage = examService.getUserHistory(user, PageRequest.of(page, size));
         return ResponseEntity.ok(historyPage);
     }
-    @GetMapping("/{id}/play")
-    public ResponseEntity<?> getToPlayById(@PathVariable Long id) {
-        return ResponseEntity.ok(examService.getToPlayById(id));
-    }
-
-    @GetMapping("/categories/{categoryId}/exams")
-    public ResponseEntity<?> getExamsByCategory(@PathVariable Long categoryId) {
-        return ResponseEntity.ok(examService.getExamsByCategory(categoryId));
-    }
-}
 
     @GetMapping("/history/{historyId}/user/{userId}")
     public ResponseEntity<?> getExamHistoryDetail(@PathVariable Long historyId, @PathVariable Long userId) {
         try {
-            HistoryDTO dto = examService.getHistoryDetailWithAnswers(historyId, userId);
-            return ResponseEntity.ok(dto);
+            HistoryResponse response = examService.getHistoryDetailWithAnswers(historyId, userId);
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("History not found for user " + userId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 }

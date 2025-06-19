@@ -30,6 +30,10 @@ public class QuestionService {
     @Value("${admin.username}")
     private String adminUsername;
 
+    public List<Question> getAll() {
+        return questionRepository.findAll();
+    }
+
     @Transactional
     public void addQuestion(AddQuestionRequest request) {
         Question question = new Question();

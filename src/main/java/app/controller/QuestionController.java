@@ -16,6 +16,11 @@ public class QuestionController {
     private final QuestionService questionService;
     private final MessageHelper messageHelper;
 
+    @GetMapping
+    public ResponseEntity<?> getALl() {
+        return ResponseEntity.status(HttpStatus.OK).body(questionService.getAll());
+    }
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getAllQuestions(@PathVariable long userId) {
         return ResponseEntity.status(HttpStatus.OK).body(questionService.findByUserId(userId));

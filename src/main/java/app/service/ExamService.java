@@ -1,12 +1,11 @@
 package app.service;
 
-import app.dto.CreateExamRequest;
+import app.dto.exam.CreateExamRequest;
 import app.dto.ExamCardResponse;
 import app.dto.exam.PlayExamResponse;
 import app.entity.Exam;
 import app.entity.Question;
 import app.entity.User;
-import app.exception.NotFoundException;
 import app.exception.NotFoundException;
 import app.repository.ExamRepository;
 import app.repository.QuestionRepository;
@@ -23,6 +22,7 @@ public class ExamService {
     private final ExamRepository examRepository;
     private final UserRepository userRepository;
     private final QuestionRepository questionRepository;
+    private final MessageHelper messageHelper;
 
     public void createExam(CreateExamRequest request) {
         User author = userRepository.findById(request.getAuthorId())

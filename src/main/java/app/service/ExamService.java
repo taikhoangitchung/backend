@@ -28,7 +28,11 @@ public class ExamService {
         Exam exam = new Exam();
         exam.setTitle(request.getTitle());
         exam.setAuthor(author);
+        exam.setDuration(request.getDuration());
         exam.setQuestions(questions);
+        exam.setDifficulty(request.getDifficulty());
+        exam.setPassScore(request.getPassScore());
+        exam.setPlayedTimes(0);
         examRepository.save(exam);
     }
 }

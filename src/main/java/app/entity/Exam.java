@@ -32,6 +32,9 @@ public class Exam {
     )
     private List<Question> questions;
 
+    @ManyToOne
+    @JoinColumn(nullable = false)
+    private Category category;
 
     private long duration;
 

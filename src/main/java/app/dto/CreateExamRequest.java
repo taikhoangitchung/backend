@@ -1,5 +1,6 @@
 package app.dto;
 
+import app.entity.Difficulty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,7 +10,10 @@ import java.util.List;
 @Setter
 public class CreateExamRequest {
     private String title;
-    private String description;
     private Long authorId;
+    private Difficulty difficulty;
     private List<Long> questionIds;
+    private long duration;
+    private long passScore;
+    private long playedTimes;
 }

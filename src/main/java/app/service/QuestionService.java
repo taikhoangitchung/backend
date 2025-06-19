@@ -1,8 +1,8 @@
 package app.service;
 
-import app.dto.AddQuestionRequest;
-import app.dto.EditQuestionRequest;
-import app.dto.QuestionResponse;
+import app.dto.question.AddQuestionRequest;
+import app.dto.question.EditQuestionRequest;
+import app.dto.question.QuestionResponse;
 import app.entity.*;
 import app.exception.LockedException;
 import app.exception.NotFoundException;

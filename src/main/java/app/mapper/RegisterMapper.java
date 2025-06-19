@@ -1,6 +1,6 @@
 package app.mapper;
 
-import app.dto.RegisterRequest;
+import app.dto.user.RegisterRequest;
 import app.entity.User;
 import org.springframework.stereotype.Component;
 

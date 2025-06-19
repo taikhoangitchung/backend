@@ -1,4 +1,4 @@
-package app.dto;
+package app.dto.question;
 
 import app.entity.Answer;
 import lombok.Getter;

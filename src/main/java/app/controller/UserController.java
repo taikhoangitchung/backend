@@ -1,6 +1,6 @@
 package app.controller;
 
-import app.dto.*;
+import app.dto.user.*;
 import app.service.UserService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;

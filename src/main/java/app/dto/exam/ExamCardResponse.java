@@ -6,8 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
 @Setter
+@Getter
 @AllArgsConstructor
 public class ExamCardResponse {
     private Long id;
@@ -15,4 +15,4 @@ public class ExamCardResponse {
     private long playedTimes;
     private int questionCount;
     private Difficulty difficulty;
-} 
+}

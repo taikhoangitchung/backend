@@ -45,15 +45,7 @@ public class ExamController {
     @GetMapping("/history/{historyId}/user/{userId}")
     public ResponseEntity<?> getExamHistoryDetail(@PathVariable Long historyId, @PathVariable Long userId) {
         try {
-            History history = examService.getExamHistoryDetail(historyId, userId);
-            HistoryDTO dto = new HistoryDTO();
-            dto.setId(history.getId());
-            dto.setExamName(history.getExam().getTitle());
-            dto.setCompletedAt(history.getCompletedAt());
-            dto.setTimeTaken(history.getTimeTaken());
-            dto.setScore(history.getScore());
-            dto.setAttempts(historyRepository.countAttemptsByUserIdAndExamId(userId, history.getExam().getId()));
-            dto.setPassed(history.isPassed());
+            HistoryDTO dto = examService.getHistoryDetailWithAnswers(historyId, userId);
             return ResponseEntity.ok(dto);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("History not found for user " + userId);

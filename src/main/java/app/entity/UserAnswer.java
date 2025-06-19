@@ -30,6 +30,11 @@ public class UserAnswer {
 
     private int score;
 
-    @Transient // Không lưu vào DB, chỉ dùng để nạp dữ liệu
-    private List<Answer> answers; // Danh sách đáp án của câu hỏi
+    @ManyToMany
+    @JoinTable(
+            name = "user_answer_answer",
+            joinColumns = @JoinColumn(name = "user_answer_id"),
+            inverseJoinColumns = @JoinColumn(name = "answer_id")
+    )
+    private List<Answer> answers; // Danh sách đáp án
 }

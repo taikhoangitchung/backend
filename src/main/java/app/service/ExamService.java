@@ -88,15 +88,17 @@ public class ExamService {
         dto.setAttempts(historyRepository.findAllByUserIdAndExamId(userId, history.getExam().getId()).indexOf(history) + 1);
         dto.setPassed(history.isPassed());
 
-        // Lấy thông tin user
         User user = history.getUser();
         dto.setUsername(user.getUsername());
 
-        // Lấy lịch sử trả lời và nạp quan hệ
-        List<UserAnswer> userAnswers = userAnswerRepository.findByHistoryId(historyId);
+        // Lấy lịch sử trả lời với quan hệ đầy đủ
+        List<UserAnswer> userAnswers = userAnswerRepository.findByHistoryIdWithDetails(historyId);
+        // Force initialization of lazy-loaded collections
         for (UserAnswer ua : userAnswers) {
-            ua.setQuestion(ua.getQuestion()); // Đảm bảo nạp question
-            ua.setAnswers(ua.getQuestion().getAnswers()); // Nạp danh sách đáp án
+            if (ua.getQuestion() != null) {
+                ua.getQuestion().getAnswers().size(); // Ensure answers are loaded
+            }
+            ua.getAnswers().size(); // Ensure answers are loaded
         }
         dto.setUserAnswers(userAnswers);
 

@@ -11,6 +11,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -41,21 +43,18 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             Claims claims = jwtService.extractToken(token);
             String email = claims.getSubject();
-            Long userId = claims.get("id", Long.class);
-            String username = claims.get("username", String.class);
-            String role = claims.get("role", String.class);
 
             if (email == null || !jwtService.isTokenValid(token, email)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
 
-            CustomUserDetails userDetails = new CustomUserDetails(
-                    userId, email, username, role, null // password có thể để null
-            );
+            String role = (String) claims.get("role");
+
+            GrantedAuthority authority = new SimpleGrantedAuthority(role);
 
             Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities()
+                    email, null, Collections.singleton(authority)
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(request, response);

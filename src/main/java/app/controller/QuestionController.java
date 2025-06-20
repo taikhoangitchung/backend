@@ -54,9 +54,4 @@ public class QuestionController {
         questionService.delete(id);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("delete.success"));
     }
-
-    @GetMapping
-    public ResponseEntity<?> getAll() {
-        return ResponseEntity.status(HttpStatus.OK).body(questionService.findAll());
-    }
 }

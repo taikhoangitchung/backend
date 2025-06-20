@@ -12,6 +12,7 @@ import app.exception.NotFoundException;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -93,13 +94,17 @@ public class HistoryService {
         return new LastPlayedResponse(correct, wrong, request.getTimeTaken(), score, questionResults);
     }
 
-    public List<HistoryResponse> getHistoryByUser(Long userId) {
-        List<History> histories = historyRepository.findByUserIdOrderByFinishedAtDesc(userId);
+    public List<HistoryResponse> getHistoryByUser() {
+        User foundUser = userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElse(null);
+        assert foundUser != null;
+        List<History> histories = historyRepository.findByUserIdOrderByFinishedAtDesc(foundUser.getId());
         return histories.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
 
-    public HistoryResponse getHistoryDetail(Long userId, Long historyId) {
-        History history = historyRepository.findByIdAndUserId(historyId, userId);
+    public HistoryResponse getHistoryDetail( Long historyId) {
+        User foundUser = userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElse(null);
+        assert foundUser != null;
+        History history = historyRepository.findByIdAndUserId(historyId, foundUser.getId());
         if (history == null) {
             throw new IllegalArgumentException(messageHelper.get("history.not.found"));
         }

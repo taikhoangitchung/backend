@@ -1,12 +1,14 @@
 package app.service;
 
+import app.dto.exam.CreateExamRequest;
 import app.dto.exam.ExamCardResponse;
 import app.dto.exam.PlayExamResponse;
-import app.entity.Exam;
+import app.entity.*;
 import app.exception.NotFoundException;
-import app.repository.ExamRepository;
+import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -1,12 +1,20 @@
 package app.dto.exam;
 
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import app.entity.Difficulty;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+import java.util.List;
+
+@Getter
+@Setter
 public class CreateExamRequest {
     private String title;
     private Long authorId;
-    @NotNull(message = "Category ID is required")
-    private Long categoryId;
+    private long difficultyId;
+    private long categoryId;
+    private List<Long> questionIds;
+    private long duration;
+    private long passScore;
+    private long playedTimes;
 }

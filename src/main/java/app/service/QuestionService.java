@@ -3,6 +3,7 @@ package app.service;
 import app.dto.question.AddQuestionRequest;
 import app.dto.question.EditQuestionRequest;
 import app.dto.question.QuestionInfoResponse;
+import app.dto.question.FilterQuestionRequest;
 import app.entity.*;
 import app.exception.LockedException;
 import app.exception.NotFoundException;
@@ -29,6 +30,10 @@ public class QuestionService {
 
     @Value("${admin.username}")
     private String adminUsername;
+
+    public List<Question> getAll() {
+        return questionRepository.findAll();
+    }
 
     @Transactional
     public void addQuestion(AddQuestionRequest request) {
@@ -117,5 +122,9 @@ public class QuestionService {
 
         questionRepository.delete(question);
         answerRepository.deleteAll(question.getAnswers());
+    }
+
+    public List<Question> filterByCategoryAndSource(FilterQuestionRequest request) {
+        return questionRepository.findByUserIdAndCategoryIdOptional(request.getUserId(), request.getCategoryId());
     }
 }

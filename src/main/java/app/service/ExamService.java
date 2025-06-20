@@ -1,10 +1,11 @@
 package app.service;
 
 import app.dto.exam.ExamCardResponse;
+import app.dto.exam.CreateExamRequest;
 import app.dto.exam.PlayExamResponse;
-import app.entity.Exam;
+import app.entity.*;
 import app.exception.NotFoundException;
-import app.repository.ExamRepository;
+import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,34 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ExamService {
     private final ExamRepository examRepository;
+    private final UserRepository userRepository;
+    private final QuestionRepository questionRepository;
     private final MessageHelper messageHelper;
+    private final DifficultyRepository difficultyRepository;
+    private final CategoryRepository categoryRepository;
+
+    public void createExam(CreateExamRequest request) {
+        User author = userRepository.findById(request.getAuthorId())
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+        Difficulty difficulty = difficultyRepository.findById(request.getDifficultyId())
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("difficulty.not.found")));
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("category.not.found")));
+
+        System.err.println(request.getQuestionIds());
+        List<Question> questions = questionRepository.findAllById(request.getQuestionIds());
+
+        Exam exam = new Exam();
+        exam.setTitle(request.getTitle());
+        exam.setAuthor(author);
+        exam.setDifficulty(difficulty);
+        exam.setCategory(category);
+        exam.setQuestions(questions);
+        exam.setDuration(request.getDuration());
+        exam.setPassScore(request.getPassScore());
+        exam.setPlayedTimes(0);
+        examRepository.save(exam);
+    }
 
     public PlayExamResponse getToPlayById(Long id) {
         Exam exam = examRepository.findById(id)
@@ -39,5 +67,9 @@ public class ExamService {
 
             )
         ).toList();
+    }
+
+    public boolean existExam(String title) {
+        return examRepository.existsByTitle(title);
     }
 }

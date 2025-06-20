@@ -8,7 +8,7 @@ import java.util.List;
 
 @Setter
 @Getter
-public class QuestionResponse {
+public class QuestionInfoResponse {
     private Long id;
     private String content;
     private String category;

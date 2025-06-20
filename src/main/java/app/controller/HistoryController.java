@@ -16,6 +16,6 @@ public class HistoryController {
 
     @PostMapping
     public ResponseEntity<?> addHistory(@RequestBody AddHistoryRequest request) {
-        return ResponseEntity.ok().body(historyService.submitAndEvaluate(request));
+        return ResponseEntity.ok().body(historyService.addHistory(request));
     }
 }

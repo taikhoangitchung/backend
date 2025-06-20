@@ -1,8 +1,10 @@
 package app.service;
 
+import app.dto.answer.AnswerResponse;
 import app.dto.exam.SubmittedQuestion;
 import app.dto.history.AddHistoryRequest;
 import app.dto.history.LastPlayedResponse;
+import app.dto.question.QuestionResultResponse;
 import app.entity.*;
 import app.exception.NotFoundException;
 import app.repository.ExamRepository;
@@ -13,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +29,7 @@ public class HistoryService {
     private final ExamRepository examRepository;
     private final UserRepository userRepository;
 
-    public LastPlayedResponse submitAndEvaluate(AddHistoryRequest request) {
+    public LastPlayedResponse addHistory(AddHistoryRequest request) {
         Exam exam = examRepository.findById(request.getExamId())
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
         User user = userRepository.findById(request.getUserId())
@@ -40,24 +43,39 @@ public class HistoryService {
 
         long correct = 0;
         long wrong = 0;
+        List<QuestionResultResponse> questionResults = new ArrayList<>();
 
         for (Question question : exam.getQuestions()) {
-            List<Long> correctAnswerIds = question.getAnswers().stream()
-                    .filter(Answer::getCorrect)
-                    .map(Answer::getId)
-                    .toList();
+            List<AnswerResponse> answerResponses = new ArrayList<>();
+            List<Long> correctAnswerIds = new ArrayList<>();
+            List<Long> selectedAnswerIds = submittedMap.getOrDefault(question.getId(), List.of());
 
-            List<Long> submittedAnswerIds = submittedMap.getOrDefault(question.getId(), List.of());
+            for (Answer answer : question.getAnswers()) {
+                answerResponses.add(new AnswerResponse(
+                        answer.getId(),
+                        answer.getContent(),
+                        answer.getCorrect(),
+                        answer.getColor()
+                ));
+                if (answer.getCorrect()) {
+                    correctAnswerIds.add(answer.getId());
+                }
+            }
 
             boolean isCorrect;
             if ("multiple".equalsIgnoreCase(question.getType().getName())) {
-                isCorrect = new HashSet<>(correctAnswerIds).equals(new HashSet<>(submittedAnswerIds));
+                isCorrect = new HashSet<>(correctAnswerIds).equals(new HashSet<>(selectedAnswerIds));
             } else {
-                isCorrect = submittedAnswerIds.size() == 1 && correctAnswerIds.contains(submittedAnswerIds.get(0));
+                isCorrect = selectedAnswerIds.size() == 1 && correctAnswerIds.contains(selectedAnswerIds.get(0));
             }
 
             if (isCorrect) correct++;
             else wrong++;
+
+            QuestionResultResponse questionResult = new QuestionResultResponse(
+                    question.getId(), question.getContent(), question.getType().getName(), answerResponses, selectedAnswerIds
+            );
+            questionResults.add(questionResult);
         }
 
         long score = Math.round(((double) correct / exam.getQuestions().size()) * 100);
@@ -70,8 +88,9 @@ public class HistoryService {
         history.setScore(score);
         history.setPassed(passed);
         history.setFinishedAt(LocalDateTime.parse(request.getFinishedAt()));
+        exam.setPlayedTimes(exam.getPlayedTimes() + 1);
         historyRepository.save(history);
 
-        return new LastPlayedResponse(correct, wrong, request.getTimeTaken(), score);
+        return new LastPlayedResponse(correct, wrong, request.getTimeTaken(), score, questionResults);
     }
 }

@@ -31,4 +31,9 @@ public class HistoryController {
     public ResponseEntity<HistoryResponse> getHistoryDetail(@PathVariable Long id) {
         return ResponseEntity.ok(historyService.getHistoryDetail(id));
     }
+
+    @GetMapping("/exams/{id}")
+    public ResponseEntity<?> getByExamId(@PathVariable Long id) {
+        return ResponseEntity.ok(historyService.getByExamId(id));
+    }
 }

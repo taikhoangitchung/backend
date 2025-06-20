@@ -84,7 +84,6 @@ public class QuestionService {
             throw new LockedException(messageHelper.get("question.update.conflict"));
         }
 
-
         Category category = categoryRepository.findByName(request.getCategory());
         if (category == null) {
             throw new NotFoundException(messageHelper.get("category.not.found"));

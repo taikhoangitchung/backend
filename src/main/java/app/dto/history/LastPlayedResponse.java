@@ -14,6 +14,6 @@ public class LastPlayedResponse {
     private long correct;
     private long wrong;
     private long timeTaken;
-    private long score;
+    private double score;
     private List<QuestionResultResponse> questions;
 }

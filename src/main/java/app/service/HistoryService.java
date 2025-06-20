@@ -1,6 +1,7 @@
 package app.service;
 
 import app.dto.answer.AnswerResponse;
+import app.dto.exam.ExamHistoryDetail;
 import app.dto.exam.SubmittedQuestion;
 import app.dto.history.AddHistoryRequest;
 import app.dto.history.HistoryResponse;

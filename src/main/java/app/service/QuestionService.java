@@ -127,8 +127,4 @@ public class QuestionService {
     public List<Question> filterByCategoryAndSource(FilterQuestionRequest request) {
         return questionRepository.findByUserIdAndCategoryIdOptional(request.getUserId(), request.getCategoryId());
     }
-
-    public List<Question> findAll() {
-        return questionRepository.findAll();
-    }
 }

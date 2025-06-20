@@ -2,6 +2,7 @@ package app.service;
 
 import app.dto.question.AddQuestionRequest;
 import app.dto.question.EditQuestionRequest;
+import app.dto.question.FilterQuestionRequest;
 import app.dto.question.QuestionResponse;
 import app.entity.*;
 import app.exception.LockedException;
@@ -121,5 +122,9 @@ public class QuestionService {
 
         questionRepository.delete(question);
         answerRepository.deleteAll(question.getAnswers());
+    }
+
+    public List<Question> filterByCategoryAndSource(FilterQuestionRequest request) {
+        return questionRepository.findByUserIdAndCategoryIdOptional(request.getUserId(), request.getCategoryId());
     }
 }

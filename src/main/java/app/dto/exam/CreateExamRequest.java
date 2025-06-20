@@ -11,7 +11,8 @@ import java.util.List;
 public class CreateExamRequest {
     private String title;
     private Long authorId;
-    private Difficulty difficulty;
+    private long difficultyId;
+    private long categoryId;
     private List<Long> questionIds;
     private long duration;
     private long passScore;

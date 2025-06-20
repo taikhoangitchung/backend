@@ -2,6 +2,7 @@ package app.controller;
 
 import app.dto.question.AddQuestionRequest;
 import app.dto.question.EditQuestionRequest;
+import app.dto.question.FilterQuestionRequest;
 import app.service.QuestionService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,11 @@ public class QuestionController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getAllQuestions(@PathVariable long userId) {
         return ResponseEntity.status(HttpStatus.OK).body(questionService.findByUserId(userId));
+    }
+
+    @PostMapping("/filter")
+    public ResponseEntity<?> filterByCategoryAndSource(@RequestBody FilterQuestionRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(questionService.filterByCategoryAndSource(request));
     }
 
     @GetMapping("/{id}")

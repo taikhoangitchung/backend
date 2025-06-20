@@ -2,6 +2,7 @@ package app.service;
 
 import app.dto.question.AddQuestionRequest;
 import app.dto.question.EditQuestionRequest;
+import app.dto.question.FilterQuestionRequest;
 import app.dto.question.QuestionInfoResponse;
 import app.entity.*;
 import app.exception.LockedException;

@@ -32,6 +32,11 @@ public class SecurityConfig {
                                 , "/media/**"
                                 , "/email/send"
                                 , "/email/send-code"
+                                , "/categories"
+                                , "/questions/**"
+                                , "/exams"
+                                , "/exams/is-exists/**"
+                                , "/difficulties"
                                 , "/users/check-token/**"
                                 , "/users/recover-password"
                                 , "/users/check-duplicate")

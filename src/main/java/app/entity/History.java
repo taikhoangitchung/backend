@@ -7,15 +7,15 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Setter
 @Getter
+@Setter
 public class History {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(nullable = false)
+    @JoinColumn( nullable = false)
     private User user;
 
     @ManyToOne
@@ -23,10 +23,9 @@ public class History {
     private Exam exam;
 
     private long score;
-
     private long timeTaken;
-
     private boolean passed;
 
+    @Column
     private LocalDateTime finishedAt;
 }

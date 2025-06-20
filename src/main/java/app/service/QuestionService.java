@@ -30,6 +30,10 @@ public class QuestionService {
     @Value("${admin.username}")
     private String adminUsername;
 
+    public List<Question> getAll() {
+        return questionRepository.findAll();
+    }
+
     @Transactional
     public void addQuestion(AddQuestionRequest request) {
         Question question = new Question();
@@ -117,6 +121,10 @@ public class QuestionService {
 
         questionRepository.delete(question);
         answerRepository.deleteAll(question.getAnswers());
+    }
+
+    public List<Question> filterByCategoryAndSource(FilterQuestionRequest request) {
+        return questionRepository.findByUserIdAndCategoryIdOptional(request.getUserId(), request.getCategoryId());
     }
 
     public List<Question> findAll() {

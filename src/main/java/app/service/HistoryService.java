@@ -14,7 +14,6 @@ import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -27,10 +26,8 @@ public class HistoryService {
     private final MessageHelper messageHelper;
     private final ExamRepository examRepository;
     private final UserRepository userRepository;
-    private final QuestionRepository questionRepository;
     private final UserAnswerRepository userAnswerRepository;
 
-    @Transactional
     public LastPlayedResponse submitAndEvaluate(AddHistoryRequest request) {
         Exam exam = examRepository.findById(request.getExamId())
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
@@ -38,56 +35,45 @@ public class HistoryService {
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
 
         Map<Long, List<Long>> submittedMap = request.getQuestions().stream()
-                .collect(Collectors.toMap(
-                        SubmittedQuestion::getId,
-                        SubmittedQuestion::getAnswerIds
-                ));
+                .collect(Collectors.toMap(SubmittedQuestion::getId, SubmittedQuestion::getAnswerIds));
 
         long correct = 0;
-        long wrong = 0;
         List<QuestionResultResponse> questionResults = new ArrayList<>();
-        List<UserAnswer> userAnswers = new ArrayList<>();
 
         for (Question question : exam.getQuestions()) {
-            List<AnswerResponse> answerResponses = new ArrayList<>();
-            List<Long> correctAnswerIds = new ArrayList<>();
+            List<Long> correctAnswerIds = question.getAnswers().stream()
+                    .filter(Answer::getCorrect)
+                    .map(Answer::getId)
+                    .toList();
+
             List<Long> selectedAnswerIds = submittedMap.getOrDefault(question.getId(), List.of());
 
-            for (Answer answer : question.getAnswers()) {
-                answerResponses.add(new AnswerResponse(
-                        answer.getId(),
-                        answer.getContent(),
-                        answer.getCorrect(),
-                        answer.getColor()
-                ));
-                if (answer.getCorrect()) {
-                    correctAnswerIds.add(answer.getId());
+            boolean isCorrect = false;
+            if (!selectedAnswerIds.isEmpty()) {
+                if ("multiple".equalsIgnoreCase(question.getType().getName())) {
+                    isCorrect = new HashSet<>(correctAnswerIds).equals(new HashSet<>(selectedAnswerIds));
+                } else {
+                    isCorrect = selectedAnswerIds.size() == 1 && correctAnswerIds.contains(selectedAnswerIds.get(0));
                 }
             }
 
-            boolean isCorrect;
-            if ("multiple".equalsIgnoreCase(question.getType().getName())) {
-                isCorrect = new HashSet<>(correctAnswerIds).equals(new HashSet<>(selectedAnswerIds));
-            } else {
-                isCorrect = selectedAnswerIds.size() == 1 && correctAnswerIds.contains(selectedAnswerIds.get(0));
-            }
-
             if (isCorrect) correct++;
-            else wrong++;
 
-            QuestionResultResponse questionResult = new QuestionResultResponse(
-                    question.getId(), question.getContent(), question.getType().getName(), answerResponses, selectedAnswerIds
-            );
-            questionResults.add(questionResult);
+            List<AnswerResponse> answerResponses = question.getAnswers().stream()
+                    .map(a -> new AnswerResponse(a.getId(), a.getContent(), a.getCorrect(), a.getColor()))
+                    .collect(Collectors.toList());
 
-            UserAnswer ua = new UserAnswer();
-            ua.setQuestion(question);
-            ua.setSelectedAnswerIds(selectedAnswerIds.stream().map(Object::toString).collect(Collectors.joining(",")));
-            ua.setCorrectAnswerIds(correctAnswerIds.stream().map(Object::toString).collect(Collectors.joining(",")));
-            userAnswers.add(ua);
+            questionResults.add(new QuestionResultResponse(
+                    question.getId(),
+                    question.getContent(),
+                    question.getType().getName(),
+                    answerResponses,
+                    selectedAnswerIds
+            ));
         }
 
-        long score = Math.round(((double) correct / exam.getQuestions().size()) * 100);
+        int totalQuestions = exam.getQuestions().size();
+        double score = Math.round(((double) correct / totalQuestions) * 1000) / 10.0;
         boolean passed = score >= exam.getPassScore();
 
         History history = new History();
@@ -98,15 +84,12 @@ public class HistoryService {
         history.setPassed(passed);
         history.setFinishedAt(LocalDateTime.parse(request.getFinishedAt()));
         exam.setPlayedTimes(exam.getPlayedTimes() + 1);
-        history = historyRepository.save(history);
 
-        History finalHistory = history;
-        userAnswers.forEach(ua -> ua.setHistory(finalHistory));
-        userAnswerRepository.saveAll(userAnswers);
-        System.out.println("Saved UserAnswers for historyId " + history.getId() + ": " + userAnswers); // Debug
+        historyRepository.save(history);
 
-        return new LastPlayedResponse(correct, wrong, request.getTimeTaken(), score, questionResults);
+        return new LastPlayedResponse(correct, totalQuestions - correct, request.getTimeTaken(), score, questionResults);
     }
+
 
     public List<HistoryResponse> getHistoryByUser() {
         User foundUser = userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElse(null);
@@ -204,5 +187,20 @@ public class HistoryService {
         long minutes = seconds / 60;
         long remainingSeconds = seconds % 60;
         return String.format("%02d:%02d", minutes, remainingSeconds);
+    }
+
+    public List<ExamHistoryDetail> getByExamId(Long id) {
+        return historyRepository.findByExamIdOrderByFinishedAtDesc(id).stream().map(history -> {
+            ExamHistoryDetail detail = new ExamHistoryDetail();
+            detail.setUsername(history.getUser().getUsername());
+            detail.setFinishedAt(history.getFinishedAt());
+            detail.setScore(history.getScore());
+            int totalQuestions = history.getExam().getQuestions().size();
+            detail.setTotalQuestions(totalQuestions);
+            long correctAnswers = Math.round((history.getScore() / 100.0) * totalQuestions);
+            detail.setTitle(history.getExam().getTitle());
+            detail.setCorrectAnswers((int) correctAnswers);
+            return detail;
+        }).collect(Collectors.toList());
     }
 }

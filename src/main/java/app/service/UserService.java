@@ -202,6 +202,7 @@ public class UserService {
         response.put("username", user.getUsername());
         response.put("avatar", user.getAvatar());
         response.put("createdAt", user.getCreateAt());
+        response.put("active", user.isActive());
         return response;
     }
 

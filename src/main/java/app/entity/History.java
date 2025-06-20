@@ -22,6 +22,7 @@ public class History {
     @JoinColumn(nullable = false)
     private Exam exam;
 
+    private long score;
     private long timeTaken;
     private boolean passed;
 

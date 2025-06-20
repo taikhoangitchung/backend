@@ -1,21 +1,21 @@
 package app.service;
 
+import app.dto.answer.AnswerResponse;
 import app.dto.exam.SubmittedQuestion;
 import app.dto.history.AddHistoryRequest;
+import app.dto.history.HistoryResponse;
 import app.dto.history.LastPlayedResponse;
+import app.dto.history.QuestionDetailResponse;
+import app.dto.question.QuestionResultResponse;
 import app.entity.*;
 import app.exception.NotFoundException;
-import app.repository.ExamRepository;
-import app.repository.HistoryRepository;
-import app.repository.UserRepository;
+import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +25,8 @@ public class HistoryService {
     private final MessageHelper messageHelper;
     private final ExamRepository examRepository;
     private final UserRepository userRepository;
+    private final QuestionRepository questionRepository;
+    private final UserAnswerRepository userAnswerRepository;
 
     public LastPlayedResponse submitAndEvaluate(AddHistoryRequest request) {
         Exam exam = examRepository.findById(request.getExamId())
@@ -91,20 +93,17 @@ public class HistoryService {
         return new LastPlayedResponse(correct, wrong, request.getTimeTaken(), score, questionResults);
     }
 
-    public Page<HistoryResponse> getHistoryByUser(Long userId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<History> historyPage = historyRepository.findByUserIdOrderByFinishedAtDesc(userId, pageable);
-        return historyPage.map(this::convertToResponse);
+    public List<HistoryResponse> getHistoryByUser(Long userId) {
+        List<History> histories = historyRepository.findByUserIdOrderByFinishedAtDesc(userId);
+        return histories.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
 
     public HistoryResponse getHistoryDetail(Long userId, Long historyId) {
         History history = historyRepository.findByIdAndUserId(historyId, userId);
         if (history == null) {
-            throw new IllegalArgumentException("Không tìm thấy lịch sử bài thi hoặc bạn không có quyền truy cập.");
+            throw new IllegalArgumentException(messageHelper.get("history.not.found"));
         }
-        HistoryResponse response = convertToResponse(history);
-        response.setQuestions(getQuestionDetails(historyId));
-        return response;
+        return convertToResponse(history);
     }
 
     private HistoryResponse convertToResponse(History history) {
@@ -113,22 +112,24 @@ public class HistoryService {
         response.setExamTitle(history.getExam().getTitle());
         response.setFinishedAt(history.getFinishedAt());
         response.setTimeTakenFormatted(formatTimeTaken(history.getTimeTaken()));
-        response.setScorePercentage(calculateScorePercentage(history));
+        response.setScorePercentage((float) history.getScore());
         response.setUsername(history.getUser().getUsername());
         response.setPassed(history.isPassed());
 
         List<History> allAttempts = historyRepository.findByExamIdAndUserId(history.getExam().getId(), history.getUser().getId());
         allAttempts.sort(Comparator.comparing(History::getFinishedAt));
-        int attemptNumber = allAttempts.indexOf(history) + 1;
-        response.setAttemptNumber(attemptNumber);
+        response.setAttemptNumber(allAttempts.indexOf(history) + 1);
 
         response.setQuestions(getQuestionDetails(history.getId()));
         return response;
     }
 
     private float calculateScorePercentage(History history) {
+        if (history == null || history.getExam() == null || history.getExam().getQuestions() == null) {
+            return 0.0f;
+        }
         long correctAnswers = getCorrectAnswersCount(history.getId());
-        long totalQuestions = (history.getExam() != null && history.getExam().getQuestions() != null) ? history.getExam().getQuestions().size() : 0;
+        long totalQuestions = history.getExam().getQuestions().size();
         return totalQuestions > 0 ? (float) (correctAnswers * 100) / totalQuestions : 0.0f;
     }
 

@@ -10,6 +10,8 @@ import java.util.List;
 
 @Repository
 public interface HistoryRepository extends JpaRepository<History, Long> {
+
+    History findByExamId(Long id);
     Page<History> findByUserIdOrderByFinishedAtDesc(Long userId, Pageable pageable);
     History findByIdAndUserId(Long id, Long userId);
     List<History> findByExamIdAndUserId(Long examId, Long userId);

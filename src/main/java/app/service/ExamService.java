@@ -30,12 +30,14 @@ public class ExamService {
     public List<ExamCardResponse> getExamsByCategory(Long categoryId) {
         List<Exam> exams = examRepository.findByCategoryId(categoryId);
         return exams.stream().map(exam ->
-                new ExamCardResponse(
-                        exam.getId(),
-                        exam.getTitle(),
-                        exam.getPlayedTimes(),
-                        exam.getQuestions() != null ? exam.getQuestions().size() : 0
-                )
+            new ExamCardResponse(
+                exam.getId(),
+                exam.getTitle(),
+                exam.getPlayedTimes(),
+                exam.getQuestions() != null ? exam.getQuestions().size() : 0
+                , exam.getDifficulty()
+
+            )
         ).toList();
     }
 }

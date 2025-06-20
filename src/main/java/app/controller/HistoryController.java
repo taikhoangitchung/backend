@@ -6,6 +6,7 @@ import app.service.HistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +15,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class HistoryController {
     private final HistoryService historyService;
+    private final MessageHelper messageHelper;
 
+    @PostMapping
+    public ResponseEntity<?> addHistory(@RequestBody AddHistoryRequest request) {
+        return ResponseEntity.ok().body(historyService.submitAndEvaluate(request));
     @GetMapping
     public ResponseEntity<Page<HistoryResponse>> getHistory(
             Authentication authentication,

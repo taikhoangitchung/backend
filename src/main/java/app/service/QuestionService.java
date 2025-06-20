@@ -4,7 +4,6 @@ import app.dto.question.AddQuestionRequest;
 import app.dto.question.EditQuestionRequest;
 import app.dto.question.QuestionInfoResponse;
 import app.dto.question.FilterQuestionRequest;
-import app.dto.question.QuestionResponse;
 import app.entity.*;
 import app.exception.LockedException;
 import app.exception.NotFoundException;

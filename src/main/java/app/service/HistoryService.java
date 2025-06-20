@@ -2,20 +2,20 @@ package app.service;
 
 import app.dto.exam.SubmittedQuestion;
 import app.dto.history.AddHistoryRequest;
-import app.dto.history.HistoryResponse;
-import app.dto.history.QuestionDetailResponse;
+import app.dto.history.LastPlayedResponse;
 import app.entity.*;
 import app.exception.NotFoundException;
-import app.repository.*;
+import app.repository.ExamRepository;
+import app.repository.HistoryRepository;
+import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,8 +25,6 @@ public class HistoryService {
     private final MessageHelper messageHelper;
     private final ExamRepository examRepository;
     private final UserRepository userRepository;
-    private final QuestionRepository questionRepository;
-    private final UserAnswerRepository userAnswerRepository;
 
     public LastPlayedResponse submitAndEvaluate(AddHistoryRequest request) {
         Exam exam = examRepository.findById(request.getExamId())
@@ -42,24 +40,39 @@ public class HistoryService {
 
         long correct = 0;
         long wrong = 0;
+        List<QuestionResultResponse> questionResults = new ArrayList<>();
 
         for (Question question : exam.getQuestions()) {
-            List<Long> correctAnswerIds = question.getAnswers().stream()
-                    .filter(Answer::getCorrect)
-                    .map(Answer::getId)
-                    .toList();
+            List<AnswerResponse> answerResponses = new ArrayList<>();
+            List<Long> correctAnswerIds = new ArrayList<>();
+            List<Long> selectedAnswerIds = submittedMap.getOrDefault(question.getId(), List.of());
 
-            List<Long> submittedAnswerIds = submittedMap.getOrDefault(question.getId(), List.of());
+            for (Answer answer : question.getAnswers()) {
+                answerResponses.add(new AnswerResponse(
+                        answer.getId(),
+                        answer.getContent(),
+                        answer.getCorrect(),
+                        answer.getColor()
+                ));
+                if (answer.getCorrect()) {
+                    correctAnswerIds.add(answer.getId());
+                }
+            }
 
             boolean isCorrect;
             if ("multiple".equalsIgnoreCase(question.getType().getName())) {
-                isCorrect = new HashSet<>(correctAnswerIds).equals(new HashSet<>(submittedAnswerIds));
+                isCorrect = new HashSet<>(correctAnswerIds).equals(new HashSet<>(selectedAnswerIds));
             } else {
-                isCorrect = submittedAnswerIds.size() == 1 && correctAnswerIds.contains(submittedAnswerIds.get(0));
+                isCorrect = selectedAnswerIds.size() == 1 && correctAnswerIds.contains(selectedAnswerIds.get(0));
             }
 
             if (isCorrect) correct++;
             else wrong++;
+
+            QuestionResultResponse questionResult = new QuestionResultResponse(
+                    question.getId(), question.getContent(), question.getType().getName(), answerResponses, selectedAnswerIds
+            );
+            questionResults.add(questionResult);
         }
 
         long score = Math.round(((double) correct / exam.getQuestions().size()) * 100);
@@ -72,9 +85,10 @@ public class HistoryService {
         history.setScore(score);
         history.setPassed(passed);
         history.setFinishedAt(LocalDateTime.parse(request.getFinishedAt()));
+        exam.setPlayedTimes(exam.getPlayedTimes() + 1);
         historyRepository.save(history);
 
-        return new LastPlayedResponse(correct, wrong, request.getTimeTaken(), score);
+        return new LastPlayedResponse(correct, wrong, request.getTimeTaken(), score, questionResults);
     }
 
     public Page<HistoryResponse> getHistoryByUser(Long userId, int page, int size) {

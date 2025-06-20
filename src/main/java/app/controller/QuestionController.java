@@ -17,7 +17,7 @@ public class QuestionController {
     private final MessageHelper messageHelper;
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getAllQuestions(@PathVariable long userId) {
+    public ResponseEntity<?> getAllByUser(@PathVariable long userId) {
         return ResponseEntity.status(HttpStatus.OK).body(questionService.findByUserId(userId));
     }
 
@@ -42,5 +42,10 @@ public class QuestionController {
     public ResponseEntity<?> deleteQuestion(@PathVariable long id) {
         questionService.delete(id);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("delete.success"));
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAll() {
+        return ResponseEntity.status(HttpStatus.OK).body(questionService.findAll());
     }
 }

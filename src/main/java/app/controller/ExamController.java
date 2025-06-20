@@ -20,4 +20,9 @@ public class ExamController {
     public ResponseEntity<?> getExamsByCategory(@PathVariable Long categoryId) {
         return ResponseEntity.ok(examService.getExamsByCategory(categoryId));
     }
+
+    @GetMapping
+    public ResponseEntity<?> getAll() {
+        return ResponseEntity.ok(examService.getAll());
+    }
 }

@@ -28,9 +28,6 @@ public class User {
     @Column(unique = true)
     private String email;
 
-//    @ManyToMany(fetch = FetchType.EAGER)
-//    private Set<Authority> authorities = new HashSet<>();
-
     @Column(nullable = false)
     private LocalDateTime createAt;
 

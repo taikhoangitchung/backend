@@ -118,4 +118,8 @@ public class QuestionService {
         questionRepository.delete(question);
         answerRepository.deleteAll(question.getAnswers());
     }
+
+    public List<Question> findAll() {
+        return questionRepository.findAll();
+    }
 }

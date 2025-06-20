@@ -3,10 +3,13 @@ package app.service;
 import app.dto.exam.ExamCardResponse;
 import app.dto.exam.PlayExamResponse;
 import app.entity.Exam;
+import app.entity.User;
 import app.exception.NotFoundException;
 import app.repository.ExamRepository;
+import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,7 +18,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ExamService {
     private final ExamRepository examRepository;
+    private final UserService userService;
     private final MessageHelper messageHelper;
+
+    public List<Exam> getAll() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User foundUser = userService.findByEmail(email);
+        return examRepository.findAllByAuthorId(foundUser.getId());
+    }
 
     public PlayExamResponse getToPlayById(Long id) {
         Exam exam = examRepository.findById(id)
@@ -30,14 +40,14 @@ public class ExamService {
     public List<ExamCardResponse> getExamsByCategory(Long categoryId) {
         List<Exam> exams = examRepository.findByCategoryId(categoryId);
         return exams.stream().map(exam ->
-            new ExamCardResponse(
-                exam.getId(),
-                exam.getTitle(),
-                exam.getPlayedTimes(),
-                exam.getQuestions() != null ? exam.getQuestions().size() : 0
-                , exam.getDifficulty()
+                new ExamCardResponse(
+                        exam.getId(),
+                        exam.getTitle(),
+                        exam.getPlayedTimes(),
+                        exam.getQuestions() != null ? exam.getQuestions().size() : 0
+                        , exam.getDifficulty()
 
-            )
+                )
         ).toList();
     }
 }

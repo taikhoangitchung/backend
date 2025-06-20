@@ -2,7 +2,7 @@ package app.service;
 
 import app.dto.question.AddQuestionRequest;
 import app.dto.question.EditQuestionRequest;
-import app.dto.question.QuestionResponse;
+import app.dto.question.QuestionInfoResponse;
 import app.entity.*;
 import app.exception.LockedException;
 import app.exception.NotFoundException;
@@ -48,14 +48,14 @@ public class QuestionService {
         questionRepository.save(question);
     }
 
-    public List<QuestionResponse> findByUserId(long userId) {
+    public List<QuestionInfoResponse> findByUserId(long userId) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException(messageHelper.get("user.not.found"));
         }
         List<Question> questions = questionRepository.findByUserId(userId);
         return questions.stream()
                 .map(question -> {
-                    QuestionResponse response = new QuestionResponse();
+                    QuestionInfoResponse response = new QuestionInfoResponse();
                     response.setId(question.getId());
                     response.setContent(question.getContent());
                     response.setCategory(question.getCategory().getName());

@@ -1,5 +1,6 @@
 package app.controller;
 
+import app.auth.CustomUserDetails;
 import app.dto.history.HistoryResponse;
 import app.service.HistoryService;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,9 @@ public class HistoryController {
     }
 
     private Long extractUserId(Authentication authentication) {
-        // Giả định lấy userId từ JWT claims hoặc service
-        return 2L; // Thay bằng logic thực tế
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+            return ((CustomUserDetails) authentication.getPrincipal()).getId();
+        }
+        throw new IllegalArgumentException("Không thể xác định ID người dùng.");
     }
 }

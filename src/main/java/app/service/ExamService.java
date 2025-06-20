@@ -9,6 +9,7 @@ import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,7 +23,19 @@ public class ExamService {
     private final DifficultyRepository difficultyRepository;
     private final CategoryRepository categoryRepository;
 
-    public void createExam(CreateExamRequest request) {
+    public Exam getById(long examId) {
+        return examRepository.findById(examId).orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
+    }
+
+    @Transactional
+    public void createOrUpdateExam(CreateExamRequest request, long examId) {
+        Exam exam = null;
+
+        if (examId != -1) {
+            exam = examRepository.findById(examId).orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
+            exam.getQuestions().clear();
+        }
+
         User author = userRepository.findById(request.getAuthorId())
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
         Difficulty difficulty = difficultyRepository.findById(request.getDifficultyId())
@@ -30,10 +43,9 @@ public class ExamService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("category.not.found")));
 
-        System.err.println(request.getQuestionIds());
         List<Question> questions = questionRepository.findAllById(request.getQuestionIds());
 
-        Exam exam = new Exam();
+        exam = (exam != null) ? exam : new Exam();
         exam.setTitle(request.getTitle());
         exam.setAuthor(author);
         exam.setDifficulty(difficulty);

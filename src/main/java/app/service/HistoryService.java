@@ -1,7 +1,6 @@
 package app.service;
 
 import app.dto.answer.AnswerResponse;
-import app.dto.exam.ExamHistoryDetail;
 import app.dto.exam.SubmittedQuestion;
 import app.dto.history.AddHistoryRequest;
 import app.dto.history.HistoryResponse;
@@ -16,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -101,7 +98,7 @@ public class HistoryService {
         return histories.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
 
-    public HistoryResponse getHistoryDetail(Long historyId) {
+    public HistoryResponse getHistoryDetail( Long historyId) {
         User foundUser = userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElse(null);
         assert foundUser != null;
         History history = historyRepository.findByIdAndUserId(historyId, foundUser.getId());
@@ -131,16 +128,59 @@ public class HistoryService {
 
     private List<QuestionDetailResponse> getQuestionDetails(Long historyId) {
         List<UserAnswer> userAnswers = userAnswerRepository.findByHistoryId(historyId);
-        List<QuestionDetailResponse> questions = new ArrayList<>();
-        for (UserAnswer ua : userAnswers) {
-            QuestionDetailResponse qdr = new QuestionDetailResponse();
-            qdr.setId(ua.getQuestion().getId());
-            qdr.setContent(ua.getQuestion().getContent());
-            qdr.setCorrectAnswers(ua.getCorrectAnswerIds());
-            qdr.setSelectedAnswers(ua.getSelectedAnswerIds());
-            questions.add(qdr);
+        System.out.println("UserAnswers for historyId " + historyId + ": " + userAnswers);
+        if (userAnswers.isEmpty()) {
+            return Collections.emptyList();
         }
-        return questions;
+
+        Map<Long, QuestionDetailResponse> questionMap = new HashMap<>();
+        for (UserAnswer ua : userAnswers) {
+            Question question = ua.getQuestion();
+            if (question == null) continue;
+            QuestionDetailResponse qdr = questionMap.computeIfAbsent(question.getId(), k -> {
+                QuestionDetailResponse newQdr = new QuestionDetailResponse();
+                newQdr.setId(question.getId());
+                newQdr.setContent(question.getContent());
+                newQdr.setAnswers(new ArrayList<>());
+                return newQdr;
+            });
+
+            if (question.getAnswers() != null) {
+                for (Answer answer : question.getAnswers()) {
+                    AnswerResponse answerResponse = new AnswerResponse(
+                            answer.getId(),
+                            answer.getContent(),
+                            answer.getCorrect(),
+                            answer.getColor()
+                    );
+                    qdr.getAnswers().add(answerResponse);
+                }
+            }
+
+            String selectedAnswerIdsStr = ua.getSelectedAnswerIds();
+            if (selectedAnswerIdsStr != null && !selectedAnswerIdsStr.isEmpty()) {
+                List<Long> selectedAnswerIds = Arrays.stream(selectedAnswerIdsStr.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(Long::valueOf)
+                        .collect(Collectors.toList());
+                qdr.setSelectedAnswerIds(selectedAnswerIds);
+            }
+
+            String correctAnswerIdsStr = ua.getCorrectAnswerIds();
+            if (correctAnswerIdsStr != null && !correctAnswerIdsStr.isEmpty()) {
+                List<Long> correctAnswerIds = Arrays.stream(correctAnswerIdsStr.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(Long::valueOf)
+                        .collect(Collectors.toList());
+                qdr.getAnswers().forEach(answer -> {
+                    answer.setCorrect(correctAnswerIds.contains(answer.getId()));
+                });
+            }
+        }
+
+        return new ArrayList<>(questionMap.values());
     }
 
     private String formatTimeTaken(long seconds) {

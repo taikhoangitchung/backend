@@ -211,4 +211,10 @@ public class UserService {
         user.setActive(true);
         userRepository.save(user);
     }
+
+    public User findByEmail(String email){
+        return userRepository.findByEmail(email).orElseThrow(
+                ()-> new NotFoundException(messageHelper.get("user.not.found"))
+        );
+    }
 }

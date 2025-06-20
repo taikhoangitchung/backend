@@ -25,6 +25,11 @@ public class ExamController {
         return ResponseEntity.ok(examService.getExamsByCategory(categoryId));
     }
 
+    @GetMapping
+    public ResponseEntity<?> getAll() {
+        return ResponseEntity.ok(examService.getAll());
+    }
+
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateExamRequest request) {
         examService.createExam(request);

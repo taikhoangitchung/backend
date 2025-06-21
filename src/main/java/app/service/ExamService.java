@@ -1,7 +1,7 @@
 package app.service;
 
 import app.dto.exam.CreateExamRequest;
-import app.dto.exam.ExamCardResponse;
+import app.dto.exam.ExamSummaryResponse;
 import app.dto.exam.PlayExamResponse;
 import app.entity.*;
 import app.exception.NotFoundException;
@@ -63,21 +63,25 @@ public class ExamService {
         return response;
     }
 
-    public List<ExamCardResponse> getExamsByCategory(Long categoryId) {
+    public List<ExamSummaryResponse> getExamsByCategory(Long categoryId) {
         List<Exam> exams = examRepository.findByCategoryId(categoryId);
         return exams.stream().map(exam ->
-                new ExamCardResponse(
+                new ExamSummaryResponse(
                         exam.getId(),
                         exam.getTitle(),
                         exam.getPlayedTimes(),
-                        exam.getQuestions() != null ? exam.getQuestions().size() : 0
-                        , exam.getDifficulty()
-
+                        exam.getQuestions() != null ? exam.getQuestions().size() : 0,
+                        exam.getDifficulty()
                 )
         ).toList();
     }
 
     public boolean existExam(String title) {
         return examRepository.existsByTitle(title);
+    }
+
+    public Exam findById(Long id){
+        return examRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
     }
 }

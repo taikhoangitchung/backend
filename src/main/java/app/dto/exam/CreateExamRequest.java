@@ -1,6 +1,5 @@
 package app.dto.exam;
 
-import app.entity.Difficulty;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -23,9 +24,13 @@ public class History {
     private Exam exam;
 
     private double score;
+    
     private long timeTaken;
+
     private boolean passed;
 
-    @Column
     private LocalDateTime finishedAt;
+
+    @OneToMany(mappedBy = "history", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserChoice> userChoices;
 }

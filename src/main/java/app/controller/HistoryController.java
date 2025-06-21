@@ -1,7 +1,8 @@
 package app.controller;
 
 import app.dto.history.AddHistoryRequest;
-import app.dto.history.HistoryResponse;
+import app.dto.history.HistorySummaryResponse;
+import app.dto.history.HistoryDetailResponse;
 import app.service.HistoryService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
@@ -19,21 +20,16 @@ public class HistoryController {
 
     @PostMapping
     public ResponseEntity<?> addHistory(@RequestBody AddHistoryRequest request) {
-        return ResponseEntity.ok().body(historyService.submitAndEvaluate(request));
+        return ResponseEntity.ok().body(historyService.addHistory(request));
     }
 
     @GetMapping
-    public ResponseEntity<List<HistoryResponse>> getHistory() {
-        return ResponseEntity.ok(historyService.getHistoryByUser());
+    public ResponseEntity<List<HistorySummaryResponse>> getHistory() {
+        return ResponseEntity.ok(historyService.getAllSummary());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<HistoryResponse> getHistoryDetail(@PathVariable Long id) {
-        return ResponseEntity.ok(historyService.getHistoryDetail(id));
-    }
-
-    @GetMapping("/exams/{id}")
-    public ResponseEntity<?> getByExamId(@PathVariable Long id) {
-        return ResponseEntity.ok(historyService.getByExamId(id));
+    public ResponseEntity<HistoryDetailResponse> getHistoryDetail(@PathVariable Long id) {
+        return ResponseEntity.ok(historyService.getDetailById(id));
     }
 }

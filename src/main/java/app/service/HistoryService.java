@@ -1,207 +1,158 @@
 package app.service;
 
-import app.dto.answer.AnswerResponse;
-import app.dto.exam.ExamHistoryDetail;
-import app.dto.exam.SubmittedQuestion;
-import app.dto.history.AddHistoryRequest;
-import app.dto.history.HistoryResponse;
-import app.dto.history.LastPlayedResponse;
-import app.dto.history.QuestionDetailResponse;
-import app.dto.question.QuestionResultResponse;
+import app.dto.history.*;
 import app.entity.*;
 import app.exception.NotFoundException;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import app.dto.history.HistoryDetailResponse.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import app.dto.history.AddHistoryRequest.*;
 
 @Service
 @RequiredArgsConstructor
 public class HistoryService {
     private final HistoryRepository historyRepository;
     private final MessageHelper messageHelper;
-    private final ExamRepository examRepository;
-    private final UserRepository userRepository;
-    private final UserAnswerRepository userAnswerRepository;
+    private final ExamService examService;
+    private final UserService userService;
+    private final QuestionService questionService;
+    private final UserChoiceRepository userChoiceRepository;
 
-    public LastPlayedResponse submitAndEvaluate(AddHistoryRequest request) {
-        Exam exam = examRepository.findById(request.getExamId())
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
-
-        Map<Long, List<Long>> submittedMap = request.getQuestions().stream()
-                .collect(Collectors.toMap(SubmittedQuestion::getId, SubmittedQuestion::getAnswerIds));
-
-        long correct = 0;
-        List<QuestionResultResponse> questionResults = new ArrayList<>();
-
-        for (Question question : exam.getQuestions()) {
-            List<Long> correctAnswerIds = question.getAnswers().stream()
-                    .filter(Answer::getCorrect)
-                    .map(Answer::getId)
-                    .toList();
-
-            List<Long> selectedAnswerIds = submittedMap.getOrDefault(question.getId(), List.of());
-
-            boolean isCorrect = false;
-            if (!selectedAnswerIds.isEmpty()) {
-                if ("multiple".equalsIgnoreCase(question.getType().getName())) {
-                    isCorrect = new HashSet<>(correctAnswerIds).equals(new HashSet<>(selectedAnswerIds));
-                } else {
-                    isCorrect = selectedAnswerIds.size() == 1 && correctAnswerIds.contains(selectedAnswerIds.get(0));
-                }
-            }
-
-            if (isCorrect) correct++;
-
-            List<AnswerResponse> answerResponses = question.getAnswers().stream()
-                    .map(a -> new AnswerResponse(a.getId(), a.getContent(), a.getCorrect(), a.getColor()))
-                    .collect(Collectors.toList());
-
-            questionResults.add(new QuestionResultResponse(
-                    question.getId(),
-                    question.getContent(),
-                    question.getType().getName(),
-                    answerResponses,
-                    selectedAnswerIds
-            ));
-        }
-
-        int totalQuestions = exam.getQuestions().size();
-        double score = Math.round(((double) correct / totalQuestions) * 1000) / 10.0;
-        boolean passed = score >= exam.getPassScore();
+    public HistoryDetailResponse addHistory(AddHistoryRequest request) {
+        Exam exam = examService.findById(request.getExamId());
+        User user = userService.findInAuth();
 
         History history = new History();
         history.setUser(user);
         history.setExam(exam);
         history.setTimeTaken(request.getTimeTaken());
-        history.setScore(score);
-        history.setPassed(passed);
         history.setFinishedAt(LocalDateTime.parse(request.getFinishedAt()));
-        exam.setPlayedTimes(exam.getPlayedTimes() + 1);
 
+        List<UserChoice> userChoices = new ArrayList<>();
+        List<ChoiceResult> choiceResults = new ArrayList<>();
+
+        int correctCount = 0;
+
+        for (SubmittedChoice submitted : request.getChoices()) {
+            Question question = questionService.findById(submitted.getQuestionId());
+            List<Long> selectedIds = submitted.getAnswerIds();
+            List<Long> correctIds = getCorrectAnswerIds(question);
+            boolean isCorrect = new HashSet<>(selectedIds).equals(new HashSet<>(correctIds));
+            if (isCorrect) correctCount++;
+            UserChoice userChoice = new UserChoice();
+            userChoice.setHistory(history);
+            userChoice.setQuestion(question);
+            userChoice.setSelectedAnswerIds(selectedIds);
+            userChoices.add(userChoice);
+            choiceResults.add(new ChoiceResult(question.getId(), selectedIds, correctIds, isCorrect));
+        }
+
+        double rawScore = ((double) correctCount / request.getChoices().size()) * 100;
+        double score = BigDecimal.valueOf(rawScore).setScale(1, RoundingMode.HALF_UP).doubleValue();
+        history.setScore(score);
+        history.setPassed(score >= exam.getPassScore());
         historyRepository.save(history);
+        userChoiceRepository.saveAll(userChoices);
 
-        return new LastPlayedResponse(correct, totalQuestions - correct, request.getTimeTaken(), score, questionResults);
+        List<QuestionDTO> fullQuestions = exam.getQuestions().stream()
+                .map(this::toQuestionDTO)
+                .toList();
+
+        return new HistoryDetailResponse(
+                correctCount,
+                request.getChoices().size() - correctCount,
+                request.getTimeTaken(),
+                score,
+                choiceResults,
+                fullQuestions
+        );
     }
 
-
-    public List<HistoryResponse> getHistoryByUser() {
-        User foundUser = userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElse(null);
-        assert foundUser != null;
+    public List<HistorySummaryResponse> getAllSummary() {
+        User foundUser = userService.findInAuth();
         List<History> histories = historyRepository.findByUserIdOrderByFinishedAtDesc(foundUser.getId());
-        return histories.stream().map(this::convertToResponse).collect(Collectors.toList());
+
+        Map<Long, List<History>> grouped = histories.stream()
+                .collect(Collectors.groupingBy(h -> h.getExam().getId()));
+
+        return histories.stream().map(history -> {
+            List<History> examHistories = grouped.get(history.getExam().getId());
+            int attempt = (int) examHistories.stream()
+                    .filter(h -> h.getFinishedAt().isBefore(history.getFinishedAt()))
+                    .count() + 1;
+
+            HistorySummaryResponse dto = new HistorySummaryResponse();
+            dto.setId(history.getId());
+            dto.setExamTitle(history.getExam().getTitle());
+            dto.setUsername(history.getUser().getUsername());
+            dto.setFinishedAt(history.getFinishedAt());
+            dto.setScore(history.getScore());
+            dto.setPassed(history.isPassed());
+            dto.setTimeTaken(history.getTimeTaken());
+            dto.setAttemptTime(attempt);
+            return dto;
+        }).toList();
     }
 
-    public HistoryResponse getHistoryDetail( Long historyId) {
-        User foundUser = userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElse(null);
-        assert foundUser != null;
-        History history = historyRepository.findByIdAndUserId(historyId, foundUser.getId());
-        if (history == null) {
-            throw new IllegalArgumentException(messageHelper.get("history.not.found"));
-        }
-        return convertToResponse(history);
-    }
-
-    private HistoryResponse convertToResponse(History history) {
-        HistoryResponse response = new HistoryResponse();
-        response.setId(history.getId());
-        response.setExamTitle(history.getExam().getTitle());
-        response.setFinishedAt(history.getFinishedAt());
-        response.setTimeTakenFormatted(formatTimeTaken(history.getTimeTaken()));
-        response.setScorePercentage((float) history.getScore());
-        response.setUsername(history.getUser().getUsername());
-        response.setPassed(history.isPassed());
-
-        List<History> allAttempts = historyRepository.findByExamIdAndUserId(history.getExam().getId(), history.getUser().getId());
-        allAttempts.sort(Comparator.comparing(History::getFinishedAt));
-        response.setAttemptNumber(allAttempts.indexOf(history) + 1);
-
-        response.setQuestions(getQuestionDetails(history.getId()));
-        return response;
-    }
-
-    private List<QuestionDetailResponse> getQuestionDetails(Long historyId) {
-        List<UserAnswer> userAnswers = userAnswerRepository.findByHistoryId(historyId);
-        System.out.println("UserAnswers for historyId " + historyId + ": " + userAnswers);
-        if (userAnswers.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        Map<Long, QuestionDetailResponse> questionMap = new HashMap<>();
-        for (UserAnswer ua : userAnswers) {
-            Question question = ua.getQuestion();
-            if (question == null) continue;
-            QuestionDetailResponse qdr = questionMap.computeIfAbsent(question.getId(), k -> {
-                QuestionDetailResponse newQdr = new QuestionDetailResponse();
-                newQdr.setId(question.getId());
-                newQdr.setContent(question.getContent());
-                newQdr.setAnswers(new ArrayList<>());
-                return newQdr;
-            });
-
-            if (question.getAnswers() != null) {
-                for (Answer answer : question.getAnswers()) {
-                    AnswerResponse answerResponse = new AnswerResponse(
-                            answer.getId(),
-                            answer.getContent(),
-                            answer.getCorrect(),
-                            answer.getColor()
-                    );
-                    qdr.getAnswers().add(answerResponse);
-                }
-            }
-
-            String selectedAnswerIdsStr = ua.getSelectedAnswerIds();
-            if (selectedAnswerIdsStr != null && !selectedAnswerIdsStr.isEmpty()) {
-                List<Long> selectedAnswerIds = Arrays.stream(selectedAnswerIdsStr.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .map(Long::valueOf)
-                        .collect(Collectors.toList());
-                qdr.setSelectedAnswerIds(selectedAnswerIds);
-            }
-
-            String correctAnswerIdsStr = ua.getCorrectAnswerIds();
-            if (correctAnswerIdsStr != null && !correctAnswerIdsStr.isEmpty()) {
-                List<Long> correctAnswerIds = Arrays.stream(correctAnswerIdsStr.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .map(Long::valueOf)
-                        .collect(Collectors.toList());
-                qdr.getAnswers().forEach(answer -> {
-                    answer.setCorrect(correctAnswerIds.contains(answer.getId()));
-                });
-            }
+    public HistoryDetailResponse getDetailById(Long id) {
+        History history = findById(id);
+        List<UserChoice> userChoices = history.getUserChoices();
+        List<ChoiceResult> choiceResults = new ArrayList<>();
+        int correct = 0;
+        for (UserChoice item : userChoices) {
+            Question question = item.getQuestion();
+            List<Long> correctIds = getCorrectAnswerIds(question);
+            List<Long> selectedIds = item.getSelectedAnswerIds() != null ? item.getSelectedAnswerIds() : List.of();
+            boolean isCorrect = new HashSet<>(selectedIds).equals(new HashSet<>(correctIds));
+            if (isCorrect) correct++;
+            choiceResults.add(new ChoiceResult(question.getId(), selectedIds, correctIds, isCorrect));
         }
 
-        return new ArrayList<>(questionMap.values());
+        int wrong = userChoices.size() - correct;
+
+        List<QuestionDTO> fullQuestions = userChoices.stream()
+                .map(item -> toQuestionDTO(item.getQuestion()))
+                .toList();
+
+        return new HistoryDetailResponse(
+                correct,
+                wrong,
+                history.getTimeTaken(),
+                history.getScore(),
+                choiceResults,
+                fullQuestions
+        );
     }
 
-    private String formatTimeTaken(long seconds) {
-        long minutes = seconds / 60;
-        long remainingSeconds = seconds % 60;
-        return String.format("%02d:%02d", minutes, remainingSeconds);
+    private List<Long> getCorrectAnswerIds(Question question) {
+        return question.getAnswers().stream()
+                .filter(Answer::getCorrect)
+                .map(Answer::getId)
+                .toList();
     }
 
-    public List<ExamHistoryDetail> getByExamId(Long id) {
-        return historyRepository.findByExamIdOrderByFinishedAtDesc(id).stream().map(history -> {
-            ExamHistoryDetail detail = new ExamHistoryDetail();
-            detail.setUsername(history.getUser().getUsername());
-            detail.setFinishedAt(history.getFinishedAt());
-            detail.setScore(history.getScore());
-            int totalQuestions = history.getExam().getQuestions().size();
-            detail.setTotalQuestions(totalQuestions);
-            long correctAnswers = Math.round((history.getScore() / 100.0) * totalQuestions);
-            detail.setTitle(history.getExam().getTitle());
-            detail.setCorrectAnswers((int) correctAnswers);
-            return detail;
-        }).collect(Collectors.toList());
+    private QuestionDTO toQuestionDTO(Question question) {
+        List<AnswerDTO> answers = question.getAnswers().stream()
+                .map(this::toAnswerDTO)
+                .toList();
+        return new QuestionDTO(question.getId(), question.getContent(), answers);
+    }
+
+    private AnswerDTO toAnswerDTO(Answer answer) {
+        return new AnswerDTO(answer.getId(), answer.getContent(), answer.getCorrect());
+    }
+
+    public History findById(Long id) {
+        return historyRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("history.not.found")));
     }
 }

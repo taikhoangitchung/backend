@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @AllArgsConstructor
-public class ExamCardResponse {
+public class ExamSummaryResponse {
     private Long id;
     private String title;
     private long playedTimes;

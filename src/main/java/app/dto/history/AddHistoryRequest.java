@@ -1,6 +1,5 @@
 package app.dto.history;
 
-import app.dto.exam.SubmittedQuestion;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,8 +9,14 @@ import java.util.List;
 @Getter
 public class AddHistoryRequest {
     private Long examId;
-    private Long userId;
     private long timeTaken;
     private String finishedAt;
-    private List<SubmittedQuestion> questions;
+    private List<SubmittedChoice> choices;
+
+    @Setter
+    @Getter
+    public static class SubmittedChoice {
+        private Long questionId;
+        private List<Long> answerIds;
+    }
 }

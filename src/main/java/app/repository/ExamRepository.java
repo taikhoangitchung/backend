@@ -9,5 +9,6 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     List<Exam> findByCategoryId(Long categoryId);
 
     List<Exam> findAllByAuthorId(Long id);
+
     boolean existsByTitle(String title);
 }

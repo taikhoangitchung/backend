@@ -155,4 +155,35 @@ public class HistoryService {
         return historyRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("history.not.found")));
     }
+
+    public List<ExamSummaryHistoryResponse> getSummaryByExamId(Long examId) {
+        List<History> histories = historyRepository.findByExamId(examId);
+        List<Object[]> rawCounts = historyRepository.countAttemptsPerUserByExam(examId);
+        Map<Long, Long> userAttemptCounts = new HashMap<>();
+
+        for (Object[] row : rawCounts) {
+            Long userId = (Long) row[0];
+            Long count = (Long) row[1];
+            userAttemptCounts.put(userId, count);
+        }
+
+        return histories.stream().map(history -> {
+            int correctCount = (int) history.getUserChoices().stream()
+                    .filter(UserChoice::isCorrect)
+                    .count();
+
+            int totalQuestions = history.getExam().getQuestions().size();
+
+            return new ExamSummaryHistoryResponse(
+                    history.getUser().getUsername(),
+                    history.getExam().getTitle(),
+                    history.getScore(),
+                    correctCount,
+                    totalQuestions,
+                    history.getTimeTaken(),
+                    history.getFinishedAt(),
+                    userAttemptCounts.getOrDefault(history.getUser().getId(), 1L)
+            );
+        }).collect(Collectors.toList());
+    }
 }

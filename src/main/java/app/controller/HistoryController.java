@@ -1,6 +1,7 @@
 package app.controller;
 
 import app.dto.history.AddHistoryRequest;
+import app.dto.history.ExamSummaryHistoryResponse;
 import app.dto.history.HistorySummaryResponse;
 import app.dto.history.HistoryDetailResponse;
 import app.service.HistoryService;
@@ -31,5 +32,10 @@ public class HistoryController {
     @GetMapping("/{id}")
     public ResponseEntity<HistoryDetailResponse> getHistoryDetail(@PathVariable Long id) {
         return ResponseEntity.ok(historyService.getDetailById(id));
+    }
+
+    @GetMapping("/exams/{examId}")
+    public ResponseEntity<?> getExamSummary(@PathVariable Long examId) {
+        return ResponseEntity.ok(historyService.getSummaryByExamId(examId));
     }
 }

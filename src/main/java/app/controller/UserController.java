@@ -1,5 +1,6 @@
 package app.controller;
 
+import app.config.KickWebSocketHandler;
 import app.dto.user.*;
 import app.service.UserService;
 import app.util.BindingHandler;
@@ -13,12 +14,15 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
     private final MessageHelper messageHelper;
+    private final KickWebSocketHandler kickUser;
 
     @GetMapping("/confirm")
     public ResponseEntity<?> confirm(@RequestParam("email") String email) {
@@ -53,10 +57,11 @@ public class UserController {
         return ResponseEntity.ok(userService.searchFollowNameAndEmail(keyName, keyEmail));
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+//    @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping("/{userId}/block")
-    public ResponseEntity<?> blockUser(@PathVariable long userId) {
-        userService.blockUser(userId);
+    public ResponseEntity<?> blockUser(@PathVariable long userId) throws IOException{
+        String username = userService.blockUser(userId);
+        kickUser.kickUser(username);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("block.user.success"));
     }
 

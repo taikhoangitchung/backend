@@ -35,7 +35,7 @@ public class SecurityConfig {
                                 , "/categories"
                                 , "/questions/**"
                                 , "/exams"
-                                , "/users"
+                                , "/users/**"
                                 , "/users/confirm"
                                 , "/exams/**"
                                 , "/exams/is-exists/**"

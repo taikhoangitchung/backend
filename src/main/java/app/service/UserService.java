@@ -61,10 +61,12 @@ public class UserService {
         return userRepository.searchFollowNameAndEmail(keyName, keyEmail);
     }
 
-    public void blockUser(long userId) {
+    public String blockUser(long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
         user.setActive(false);
         userRepository.save(user);
+
+        return user.getUsername();
     }
 
     public boolean isDuplicatePassword(RecoverPasswordRequest request) {

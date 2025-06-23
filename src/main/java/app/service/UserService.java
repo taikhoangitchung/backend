@@ -4,7 +4,7 @@ import app.dto.user.ChangePasswordRequest;
 import app.dto.user.LoginRequest;
 import app.dto.user.RecoverPasswordRequest;
 import app.dto.user.RegisterRequest;
-import app.entity.PasswordRecoverToken;
+import app.entity.Token;
 import app.entity.User;
 import app.exception.*;
 import app.mapper.RegisterMapper;
@@ -71,14 +71,14 @@ public class UserService {
         user.setPassword(request.getPassword());
         userRepository.save(user);
 
-        PasswordRecoverToken resetToken = tokenRepository.findByToken(request.getToken());
+        Token resetToken = tokenRepository.findByToken(request.getToken());
         tokenRepository.deleteById(resetToken.getId());
     }
 
     public boolean isValidRecoverToken(String token) {
         try {
             System.err.println(token);
-            PasswordRecoverToken resetToken = tokenRepository.findByToken(token);
+            Token resetToken = tokenRepository.findByToken(token);
             if (resetToken != null) {
                 if (!LocalDateTime.now().isAfter(resetToken.getExpiryDate())) {
                     return true;

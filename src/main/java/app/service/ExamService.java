@@ -64,9 +64,9 @@ public class ExamService {
                 new ExamSummaryResponse(
                         exam.getId(),
                         exam.getTitle(),
-                        exam.getPlayedTimes(),
                         exam.getQuestions() != null ? exam.getQuestions().size() : 0,
-                        exam.getDifficulty()
+                        exam.getDifficulty(),
+                        exam.getPlayedTimes()
                 )
         ).toList();
     }

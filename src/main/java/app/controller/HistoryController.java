@@ -1,9 +1,6 @@
 package app.controller;
 
-import app.dto.history.AddHistoryRequest;
-import app.dto.history.ExamSummaryHistoryResponse;
-import app.dto.history.HistorySummaryResponse;
-import app.dto.history.HistoryDetailResponse;
+import app.dto.history.*;
 import app.service.HistoryService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;

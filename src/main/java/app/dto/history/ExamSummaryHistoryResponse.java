@@ -18,4 +18,5 @@ public class ExamSummaryHistoryResponse {
     long timeTaken;
     private LocalDateTime finishedAt;
     private long attemptCount;
+    private int rank;
 }

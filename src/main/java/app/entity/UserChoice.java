@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.List;
 
 @Entity
@@ -24,4 +25,12 @@ public class UserChoice {
 
     @ElementCollection
     private List<Long> selectedAnswerIds;
+
+    public boolean isCorrect() {
+        List<Long> correctIds = question.getCorrectAnswerIds();
+        List<Long> selected = selectedAnswerIds;
+
+        return selected.size() == correctIds.size() &&
+                new HashSet<>(selected).containsAll(correctIds);
+    }
 }

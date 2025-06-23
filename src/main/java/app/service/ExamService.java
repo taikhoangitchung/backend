@@ -8,7 +8,6 @@ import app.exception.NotFoundException;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,15 +59,11 @@ public class ExamService {
     }
 
     public List<Exam> getAll() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User foundUser = userService.findByEmail(email);
-        return examRepository.findAllByAuthorId(foundUser.getId());
+        return examRepository.findAll();
     }
 
     public PlayExamResponse getToPlayById(Long id) {
-        Exam exam = examRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
-
+        Exam exam = findById(id);
         PlayExamResponse response = new PlayExamResponse();
         response.setDuration(exam.getDuration());
         response.setQuestions(exam.getQuestions());
@@ -81,9 +76,9 @@ public class ExamService {
                 new ExamSummaryResponse(
                         exam.getId(),
                         exam.getTitle(),
-                        exam.getPlayedTimes(),
                         exam.getQuestions() != null ? exam.getQuestions().size() : 0,
-                        exam.getDifficulty()
+                        exam.getDifficulty(),
+                        exam.getPlayedTimes()
                 )
         ).toList();
     }

@@ -12,7 +12,7 @@ import lombok.Setter;
 public class ExamSummaryResponse {
     private Long id;
     private String title;
-    private long playedTimes;
     private int questionCount;
     private Difficulty difficulty;
+    private long playedTimes;
 }

@@ -40,7 +40,8 @@ public class SecurityConfig {
                                 , "/difficulties"
                                 , "/users/check-token/**"
                                 , "/users/recover-password"
-                                , "/users/check-duplicate")
+                                , "/users/check-duplicate"
+                                , "/ws/**")
                         .permitAll()
                         .anyRequest().authenticated()
                 )

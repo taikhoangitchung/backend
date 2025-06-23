@@ -6,6 +6,7 @@ import app.exception.NotFoundException;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import app.dto.history.HistoryDetailResponse.*;
 
@@ -60,6 +61,7 @@ public class HistoryService {
         double score = BigDecimal.valueOf(rawScore).setScale(1, RoundingMode.HALF_UP).doubleValue();
         history.setScore(score);
         history.setPassed(score >= exam.getPassScore());
+        history.getExam().setPlayedTimes(history.getExam().getPlayedTimes() + 1);
         historyRepository.save(history);
         userChoiceRepository.saveAll(userChoices);
 
@@ -154,5 +156,46 @@ public class HistoryService {
     public History findById(Long id) {
         return historyRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("history.not.found")));
+    }
+
+    public List<ExamSummaryHistoryResponse> getSummaryByExamId(Long examId) {
+        List<History> histories = historyRepository.findByExamId(examId);
+
+        List<Object[]> rawCounts = historyRepository.countAttemptsPerUserByExam(examId);
+        Map<Long, Long> userAttemptCounts = new HashMap<>();
+        for (Object[] row : rawCounts) {
+            Long userId = (Long) row[0];
+            Long count = (Long) row[1];
+            userAttemptCounts.put(userId, count);
+        }
+
+        histories.sort(Comparator
+                .comparingDouble(History::getScore).reversed()
+                .thenComparingLong(History::getTimeTaken));
+
+        List<ExamSummaryHistoryResponse> result = new ArrayList<>();
+
+        int rank = 1;
+        for (History history : histories) {
+            int correctCount = (int) history.getUserChoices().stream()
+                    .filter(UserChoice::isCorrect)
+                    .count();
+
+            int totalQuestions = history.getExam().getQuestions().size();
+
+            result.add(new ExamSummaryHistoryResponse(
+                    history.getUser().getUsername(),
+                    history.getExam().getTitle(),
+                    history.getScore(),
+                    correctCount,
+                    totalQuestions,
+                    history.getTimeTaken(),
+                    history.getFinishedAt(),
+                    userAttemptCounts.getOrDefault(history.getUser().getId(), 1L),
+                    rank
+            ));
+            rank++;
+        }
+        return result;
     }
 }

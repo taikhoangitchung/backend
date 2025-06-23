@@ -13,8 +13,6 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByIsAdminFalseOrderByCreateAtAsc();
 
-    long findIdByEmail(String email);
-
     @Query("SELECT u FROM User u WHERE " +
             "u.isAdmin = false AND " +
             "(:keyName IS NULL OR u.username LIKE CONCAT('%', :keyName, '%')) AND " +

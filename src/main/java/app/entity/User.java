@@ -36,4 +36,7 @@ public class User {
 
     @Column(nullable = true, length = 255)
     private String avatar;
+
+    @Column(nullable = true, unique = true)
+    private String googleId; // Thêm trường này để lưu ID từ Google
 }

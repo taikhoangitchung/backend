@@ -44,15 +44,6 @@ public class UserService {
     @Value("${default.avatar}")
     private String defaultAvatar;
 
-    public void confirmEmail(String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("user.not.found"));
-        user.setActive(true);
-        userRepository.save(user);
-
-        Token resetToken = tokenRepository.findByUser(user);
-        tokenRepository.deleteById(resetToken.getId());
-    }
-
     public List<User> findAllExceptAdminSortByCreateAt() {
         return userRepository.findByIsAdminFalseOrderByCreateAtAsc();
     }
@@ -61,12 +52,10 @@ public class UserService {
         return userRepository.searchFollowNameAndEmail(keyName, keyEmail);
     }
 
-    public String blockUser(long userId) {
+    public void blockUser(long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
         user.setActive(false);
         userRepository.save(user);
-
-        return user.getUsername();
     }
 
     public boolean isDuplicatePassword(RecoverPasswordRequest request) {
@@ -82,16 +71,13 @@ public class UserService {
         user.setPassword(request.getPassword());
         userRepository.save(user);
 
-        deleteToken(request.getToken());
-    }
-
-    public void deleteToken(String token) {
-        Token resetToken = tokenRepository.findByToken(token);
+        Token resetToken = tokenRepository.findByToken(request.getToken());
         tokenRepository.deleteById(resetToken.getId());
     }
 
-    public boolean isValidToken(String token) {
+    public boolean isValidRecoverToken(String token) {
         try {
+            System.err.println(token);
             Token resetToken = tokenRepository.findByToken(token);
             if (resetToken != null) {
                 if (!LocalDateTime.now().isAfter(resetToken.getExpiryDate())) {
@@ -129,7 +115,6 @@ public class UserService {
         }
 
         User user = registerMapper.toEntity(registerRequest);
-        user.setActive(false);
         user.setAvatar(defaultAvatar); // Gán avatar mặc định khi đăng ký
         user.setCreateAt(LocalDateTime.now()); // Thiết lập thời gian tạo
         userRepository.save(user);
@@ -145,10 +130,6 @@ public class UserService {
         }
 
         User user = userOptional.get();
-        if (!user.isActive()) {
-            throw new NotActiveException(messageHelper.get("not_active_account"));
-        }
-
         if (!password.equals(user.getPassword())) {
             throw new AuthException(messageHelper.get("password.incorrect"));
         }
@@ -215,7 +196,6 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
         Map<String, Object> response = new HashMap<>();
-        response.put("id",user.getId());
         response.put("username", user.getUsername());
         response.put("avatar", user.getAvatar());
         response.put("createdAt", user.getCreateAt());
@@ -238,4 +218,25 @@ public class UserService {
     public User findInAuth(){
         return findByEmail(SecurityContextHolder.getContext().getAuthentication().getName());
     }
+
+    public void registerOrUpdateGoogleUser(String email, String username, String googleId) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+
+        if (userOptional.isPresent()) {
+            User existingUser = userOptional.get();
+            existingUser.setGoogleId(googleId);
+            userRepository.save(existingUser); // Chỉ update Google ID nếu cần
+        } else {
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setUsername(username != null ? username : email);
+            newUser.setPassword(UUID.randomUUID().toString()); // ✅ sinh mật khẩu giả
+            newUser.setGoogleId(googleId);
+            newUser.setActive(true);
+            newUser.setCreateAt(LocalDateTime.now());
+            newUser.setAvatar(defaultAvatar);
+            userRepository.save(newUser);
+        }
+    }
+
 }

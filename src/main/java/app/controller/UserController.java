@@ -20,6 +20,12 @@ public class UserController {
     private final UserService userService;
     private final MessageHelper messageHelper;
 
+    @GetMapping("/confirm")
+    public ResponseEntity<?> confirm(@RequestParam("email") String email) {
+        userService.confirmEmail(email);
+        return ResponseEntity.ok(messageHelper.get("email.active.success"));
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> processRegister(@Valid @RequestBody RegisterRequest registerRequest,
                                              BindingResult bindingResult) {
@@ -52,7 +58,6 @@ public class UserController {
     public ResponseEntity<?> blockUser(@PathVariable long userId) {
         userService.blockUser(userId);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("block.user.success"));
-
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -84,7 +89,7 @@ public class UserController {
 
     @GetMapping("/check-token/{token}")
     public ResponseEntity<?> toRecoverPassword(@PathVariable String token) {
-        if (userService.isValidRecoverToken(token)) return ResponseEntity.ok(true);
+        if (userService.isValidToken(token)) return ResponseEntity.ok(true);
         else return ResponseEntity.ok().body(messageHelper.get("expired.url"));
     }
 

@@ -2,8 +2,8 @@ package app.service;
 
 import app.dto.question.AddQuestionRequest;
 import app.dto.question.EditQuestionRequest;
-import app.dto.question.QuestionInfoResponse;
 import app.dto.question.FilterQuestionRequest;
+import app.dto.question.QuestionInfoResponse;
 import app.entity.*;
 import app.exception.LockedException;
 import app.exception.NotFoundException;
@@ -83,7 +83,6 @@ public class QuestionService {
         if (!question.getExams().isEmpty()) {
             throw new LockedException(messageHelper.get("question.update.conflict"));
         }
-
 
         Category category = categoryRepository.findByName(request.getCategory());
         if (category == null) {

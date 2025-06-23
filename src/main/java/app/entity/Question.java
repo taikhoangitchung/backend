@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Setter
@@ -39,4 +40,12 @@ public class Question {
     @ManyToMany(mappedBy = "questions")
     @JsonIgnore
     private List<Exam> exams;
+
+    public List<Long> getCorrectAnswerIds() {
+        return this.getAnswers().stream()
+                .filter(Answer::getCorrect)
+                .map(Answer::getId)
+                .collect(Collectors.toList());
+    }
+
 }

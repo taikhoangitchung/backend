@@ -13,6 +13,7 @@ import app.repository.UserRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -101,7 +102,6 @@ public class UserService {
         String password = registerRequest.getPassword();
         String confirmPassword = registerRequest.getConfirmPassword();
 
-        // Kiểm tra password và confirmPassword
         if (!password.equals(confirmPassword)) {
             throw new NotMatchException(messageHelper.get("password.confirm.not.match"));
         }
@@ -134,8 +134,8 @@ public class UserService {
             throw new AuthException(messageHelper.get("password.incorrect"));
         }
 
-        user.setLastLogin(LocalDateTime.now()); // Cập nhật thời gian đăng nhập
-        userRepository.save(user); // Lưu lại thông tin người dùng
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
         return jwtService.generateToken(user);
     }
 
@@ -156,15 +156,12 @@ public class UserService {
     }
 
     public void editProfile(String email, String username, MultipartFile avatarFile) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+        User user = findByEmail(email);
 
-        // Cập nhật username nếu có
         if (username != null && !username.trim().isEmpty()) {
             user.setUsername(username);
         }
 
-        // Xử lý avatar
         if (avatarFile != null && !avatarFile.isEmpty()) {
             try {
                 String fileName = avatarFile.getOriginalFilename();
@@ -202,6 +199,7 @@ public class UserService {
         response.put("username", user.getUsername());
         response.put("avatar", user.getAvatar());
         response.put("createdAt", user.getCreateAt());
+        response.put("active", user.isActive());
         return response;
     }
 
@@ -209,5 +207,15 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
         user.setActive(true);
         userRepository.save(user);
+    }
+
+    public User findByEmail(String email){
+        return userRepository.findByEmail(email).orElseThrow(
+                ()-> new NotFoundException(messageHelper.get("user.not.found"))
+        );
+    }
+
+    public User findInAuth(){
+        return findByEmail(SecurityContextHolder.getContext().getAuthentication().getName());
     }
 }

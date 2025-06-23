@@ -23,7 +23,7 @@ public class QuestionController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getAllQuestions(@PathVariable long userId) {
+    public ResponseEntity<?> getAllByUser(@PathVariable long userId) {
         return ResponseEntity.status(HttpStatus.OK).body(questionService.findByUserId(userId));
     }
 

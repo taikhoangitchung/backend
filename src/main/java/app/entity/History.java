@@ -5,28 +5,32 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
-@Setter
 @Getter
+@Setter
 public class History {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(nullable = false)
+    @JoinColumn( nullable = false)
     private User user;
 
     @ManyToOne
     @JoinColumn(nullable = false)
     private Exam exam;
 
-    private long score;
-
+    private double score;
+    
     private long timeTaken;
 
     private boolean passed;
 
     private LocalDateTime finishedAt;
+
+    @OneToMany(mappedBy = "history", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserChoice> userChoices;
 }

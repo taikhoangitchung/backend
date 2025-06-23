@@ -1,13 +1,14 @@
 package app.service;
 
-import app.dto.exam.ExamCardResponse;
 import app.dto.exam.CreateExamRequest;
+import app.dto.exam.ExamSummaryResponse;
 import app.dto.exam.PlayExamResponse;
 import app.entity.*;
 import app.exception.NotFoundException;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ public class ExamService {
     private final ExamRepository examRepository;
     private final UserRepository userRepository;
     private final QuestionRepository questionRepository;
+    private final UserService userService;
     private final MessageHelper messageHelper;
     private final DifficultyRepository difficultyRepository;
     private final CategoryRepository categoryRepository;
@@ -57,6 +59,12 @@ public class ExamService {
         examRepository.save(exam);
     }
 
+    public List<Exam> getAll() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User foundUser = userService.findByEmail(email);
+        return examRepository.findAllByAuthorId(foundUser.getId());
+    }
+
     public PlayExamResponse getToPlayById(Long id) {
         Exam exam = examRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
@@ -67,21 +75,25 @@ public class ExamService {
         return response;
     }
 
-    public List<ExamCardResponse> getExamsByCategory(Long categoryId) {
+    public List<ExamSummaryResponse> getExamsByCategory(Long categoryId) {
         List<Exam> exams = examRepository.findByCategoryId(categoryId);
         return exams.stream().map(exam ->
-            new ExamCardResponse(
-                exam.getId(),
-                exam.getTitle(),
-                exam.getPlayedTimes(),
-                exam.getQuestions() != null ? exam.getQuestions().size() : 0
-                , exam.getDifficulty()
-
-            )
+                new ExamSummaryResponse(
+                        exam.getId(),
+                        exam.getTitle(),
+                        exam.getPlayedTimes(),
+                        exam.getQuestions() != null ? exam.getQuestions().size() : 0,
+                        exam.getDifficulty()
+                )
         ).toList();
     }
 
     public boolean existExam(String title) {
         return examRepository.existsByTitle(title);
+    }
+
+    public Exam findById(Long id){
+        return examRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
     }
 }

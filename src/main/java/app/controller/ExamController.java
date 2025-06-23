@@ -36,6 +36,11 @@ public class ExamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("exam.update.success"));
     }
 
+    @GetMapping
+    public ResponseEntity<?> getAll() {
+        return ResponseEntity.ok(examService.getAll());
+    }
+
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateExamRequest request) {
         examService.createOrUpdateExam(request, -1);

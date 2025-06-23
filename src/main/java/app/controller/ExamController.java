@@ -15,6 +15,11 @@ public class ExamController {
     private final ExamService examService;
     private final MessageHelper messageHelper;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(examService.getById(id));
+    }
+
     @GetMapping("/{id}/play")
     public ResponseEntity<?> getToPlayById(@PathVariable Long id) {
         return ResponseEntity.ok(examService.getToPlayById(id));
@@ -25,6 +30,12 @@ public class ExamController {
         return ResponseEntity.ok(examService.getExamsByCategory(categoryId));
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> update(@RequestBody CreateExamRequest request, @PathVariable long id) {
+        examService.createOrUpdateExam(request, id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("exam.update.success"));
+    }
+
     @GetMapping
     public ResponseEntity<?> getAll() {
         return ResponseEntity.ok(examService.getAll());
@@ -32,7 +43,7 @@ public class ExamController {
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateExamRequest request) {
-        examService.createExam(request);
+        examService.createOrUpdateExam(request, -1);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("exam.create.success"));
     }
 

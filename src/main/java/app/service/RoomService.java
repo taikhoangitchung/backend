@@ -1,6 +1,5 @@
 package app.service;
 
-import app.config.SocketHandler;
 import app.dto.room.CreateRoomRequest;
 import app.dto.room.RoomWaitingResponse;
 import app.entity.Room;
@@ -10,12 +9,10 @@ import app.exception.LockedException;
 import app.exception.NotFoundException;
 import app.repository.RoomRepository;
 import app.util.MessageHelper;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -46,7 +43,6 @@ public class RoomService {
 
     public void startRoom(String code) {
         Room room = findByCode(code);
-
         User currentUser = userService.findInAuth();
 
         if (!room.getHost().equals(currentUser)) {
@@ -59,15 +55,7 @@ public class RoomService {
 
         room.setStatus(Room.Status.STARTED);
         roomRepository.save(room);
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(Map.of("type", "STARTED", "examId", room.getExam().getId()));
-            SocketHandler.broadcast(code, json);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
-
 
     private String generateRoomCode() {
         String code;

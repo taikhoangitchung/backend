@@ -44,6 +44,15 @@ public class UserService {
     @Value("${default.avatar}")
     private String defaultAvatar;
 
+    public void confirmEmail(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("user.not.found"));
+        user.setActive(true);
+        userRepository.save(user);
+
+        Token resetToken = tokenRepository.findByUser(user);
+        tokenRepository.deleteById(resetToken.getId());
+    }
+
     public List<User> findAllExceptAdminSortByCreateAt() {
         return userRepository.findByIsAdminFalseOrderByCreateAtAsc();
     }
@@ -52,10 +61,12 @@ public class UserService {
         return userRepository.searchFollowNameAndEmail(keyName, keyEmail);
     }
 
-    public void blockUser(long userId) {
+    public String blockUser(long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
         user.setActive(false);
         userRepository.save(user);
+
+        return user.getUsername();
     }
 
     public boolean isDuplicatePassword(RecoverPasswordRequest request) {
@@ -71,11 +82,15 @@ public class UserService {
         user.setPassword(request.getPassword());
         userRepository.save(user);
 
-        Token resetToken = tokenRepository.findByToken(request.getToken());
+        deleteToken(request.getToken());
+    }
+
+    public void deleteToken(String token) {
+        Token resetToken = tokenRepository.findByToken(token);
         tokenRepository.deleteById(resetToken.getId());
     }
 
-    public boolean isValidRecoverToken(String token) {
+    public boolean isValidToken(String token) {
         try {
             System.err.println(token);
             Token resetToken = tokenRepository.findByToken(token);
@@ -115,6 +130,7 @@ public class UserService {
         }
 
         User user = registerMapper.toEntity(registerRequest);
+        user.setActive(false);
         user.setAvatar(defaultAvatar); // Gán avatar mặc định khi đăng ký
         user.setCreateAt(LocalDateTime.now()); // Thiết lập thời gian tạo
         userRepository.save(user);
@@ -130,6 +146,10 @@ public class UserService {
         }
 
         User user = userOptional.get();
+        if (!user.isActive()) {
+            throw new NotActiveException(messageHelper.get("not_active_account"));
+        }
+
         if (!password.equals(user.getPassword())) {
             throw new AuthException(messageHelper.get("password.incorrect"));
         }

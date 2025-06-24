@@ -178,13 +178,16 @@ public class HistoryService {
 
     public List<ExamSummaryHistoryResponse> getSummaryByExamId(Long examId) {
         List<History> histories = historyRepository.findByExamId(examId);
+        Map<Long, List<History>> userHistoriesMap = histories.stream()
+                .collect(Collectors.groupingBy(h -> h.getUser().getId()));
 
-        List<Object[]> rawCounts = historyRepository.countAttemptsPerUserByExam(examId);
-        Map<Long, Long> userAttemptCounts = new HashMap<>();
-        for (Object[] row : rawCounts) {
-            Long userId = (Long) row[0];
-            Long count = (Long) row[1];
-            userAttemptCounts.put(userId, count);
+        Map<Long, Integer> historyAttemptOrders = new HashMap<>();
+        for (Map.Entry<Long, List<History>> entry : userHistoriesMap.entrySet()) {
+            List<History> userHistories = entry.getValue();
+            userHistories.sort(Comparator.comparing(History::getFinishedAt));
+            for (int i = 0; i < userHistories.size(); i++) {
+                historyAttemptOrders.put(userHistories.get(i).getId(), i + 1);
+            }
         }
 
         histories.sort(Comparator
@@ -192,14 +195,14 @@ public class HistoryService {
                 .thenComparingLong(History::getTimeTaken));
 
         List<ExamSummaryHistoryResponse> result = new ArrayList<>();
-
-        int rank = 1;
         for (History history : histories) {
             int correctCount = (int) history.getUserChoices().stream()
                     .filter(UserChoice::isCorrect)
                     .count();
 
             int totalQuestions = history.getExam().getQuestions().size();
+
+            long attemptOrder = historyAttemptOrders.getOrDefault(history.getId(), 1);
 
             result.add(new ExamSummaryHistoryResponse(
                     history.getUser().getUsername(),
@@ -209,10 +212,8 @@ public class HistoryService {
                     totalQuestions,
                     history.getTimeTaken(),
                     history.getFinishedAt(),
-                    userAttemptCounts.getOrDefault(history.getUser().getId(), 1L),
-                    rank
+                    attemptOrder
             ));
-            rank++;
         }
         return result;
     }

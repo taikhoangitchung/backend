@@ -1,7 +1,9 @@
 package app.controller;
 
-import app.config.KickWebSocketHandler;
 import app.dto.user.*;
+import app.entity.User;
+import app.service.JwtService;
+import app.service.TokenService;
 import app.service.UserService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;
@@ -14,7 +16,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,13 +25,8 @@ import java.io.IOException;
 public class UserController {
     private final UserService userService;
     private final MessageHelper messageHelper;
-    private final KickWebSocketHandler kickUser;
-
-    @GetMapping("/confirm")
-    public ResponseEntity<?> confirm(@RequestParam("email") String email) {
-        userService.confirmEmail(email);
-        return ResponseEntity.ok(messageHelper.get("email.active.success"));
-    }
+    private final TokenService tokenService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<?> processRegister(@Valid @RequestBody RegisterRequest registerRequest,
@@ -57,12 +55,12 @@ public class UserController {
         return ResponseEntity.ok(userService.searchFollowNameAndEmail(keyName, keyEmail));
     }
 
-//    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping("/{userId}/block")
-    public ResponseEntity<?> blockUser(@PathVariable long userId) throws IOException{
-        String username = userService.blockUser(userId);
-        kickUser.kickUser(username);
+    public ResponseEntity<?> blockUser(@PathVariable long userId) {
+        userService.blockUser(userId);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("block.user.success"));
+
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -94,7 +92,7 @@ public class UserController {
 
     @GetMapping("/check-token/{token}")
     public ResponseEntity<?> toRecoverPassword(@PathVariable String token) {
-        if (userService.isValidToken(token)) return ResponseEntity.ok(true);
+        if (userService.isValidRecoverToken(token)) return ResponseEntity.ok(true);
         else return ResponseEntity.ok().body(messageHelper.get("expired.url"));
     }
 
@@ -111,5 +109,18 @@ public class UserController {
         duplicateResponse.setDuplicate(isDuplicate);
         duplicateResponse.setMessage(isDuplicate ? messageHelper.get("password.duplicate") : "");
         return ResponseEntity.ok().body(duplicateResponse);
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+        try {
+            String newAccessToken = tokenService.refreshAccessToken(refreshToken);
+            Map<String, String> response = new HashMap<>();
+            response.put("accessToken", newAccessToken);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token không hợp lệ hoặc đã hết hạn");
+        }
     }
 }

@@ -52,9 +52,4 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> expiredExceptionHandler(ExpiredException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    @ExceptionHandler(NotActiveException.class)
-    public ResponseEntity<?> expiredExceptionHandler(NotActiveException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
 }

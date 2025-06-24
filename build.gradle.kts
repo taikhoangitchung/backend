@@ -18,12 +18,15 @@ repositories {
 }
 
 dependencies {
+	// Lombok
 	implementation("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 
+	// MapStruct
 	implementation("org.mapstruct:mapstruct:1.5.5.Final")
 	annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
 
+	// Spring Boot Starters
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-websocket")
@@ -40,11 +43,16 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
 
 	implementation("org.springframework.boot:spring-boot-starter-validation")
-
 	implementation("org.springframework.boot:spring-boot-starter-mail")
 
-	implementation ("org.springframework.boot:spring-boot-devtools")
+	// OAuth2 và Google Client
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+	implementation("com.google.auth:google-auth-library-oauth2-http:1.23.0")
 
+	// DevTools (đã có, giữ nguyên)
+	implementation("org.springframework.boot:spring-boot-devtools")
+
+	// Test
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

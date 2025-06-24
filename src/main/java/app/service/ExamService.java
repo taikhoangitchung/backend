@@ -100,4 +100,8 @@ public class ExamService {
         response.setQuestions(exam.getQuestions());
         return response;
     }
+
+    public void delete(Long id) {
+        examRepository.deleteById(id);
+    }
 }

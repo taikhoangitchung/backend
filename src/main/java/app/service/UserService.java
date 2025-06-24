@@ -34,6 +34,7 @@ public class UserService {
     private final MessageHelper messageHelper;
     private final TokenRepository tokenRepository;
     private final JwtService jwtService;
+    private final TokenService tokenService;
 
     @Value("${upload.directory}")
     private String uploadDirectory;
@@ -250,13 +251,24 @@ public class UserService {
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setUsername(username != null ? username : email);
-            newUser.setPassword(UUID.randomUUID().toString()); // ✅ sinh mật khẩu giả
+            newUser.setPassword(UUID.randomUUID().toString()); // ✅ Sinh mật khẩu giả
             newUser.setGoogleId(googleId);
             newUser.setActive(true);
             newUser.setCreateAt(LocalDateTime.now());
             newUser.setAvatar(defaultAvatar);
             userRepository.save(newUser);
         }
+    }
+
+    public Map<String, String> refreshToken(String refreshToken) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            String newAccessToken = tokenService.refreshAccessToken(refreshToken);
+            response.put("accessToken", newAccessToken);
+        } catch (Exception e) {
+            response.put("error", messageHelper.get("refresh.token.invalid"));
+        }
+        return response;
     }
 
 }

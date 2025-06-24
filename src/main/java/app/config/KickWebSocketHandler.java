@@ -19,10 +19,8 @@ public class KickWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(@Nullable WebSocketSession session) {
         String username = getUsername(session);
-        System.err.println("1 " + username);
 
         if (username != null) {
-            System.err.println("2 " + username);
             sessions.put(username, session);
         }
     }
@@ -36,7 +34,6 @@ public class KickWebSocketHandler extends TextWebSocketHandler {
     }
 
     public void kickUser(String username) throws IOException {
-        System.err.println("3 " + username);
         WebSocketSession session = sessions.get(username);
         if (session != null && session.isOpen()) {
             session.sendMessage(new TextMessage("KICK"));

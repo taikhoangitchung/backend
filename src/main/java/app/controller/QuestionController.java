@@ -29,7 +29,7 @@ public class QuestionController {
 
     @PostMapping("/filter")
     public ResponseEntity<?> filterByCategoryAndSource(@RequestBody FilterQuestionRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(questionService.filterByCategoryAndSource(request));
+        return ResponseEntity.status(HttpStatus.OK).body(questionService.findWithFilters(request));
     }
 
     @GetMapping("/{id}")

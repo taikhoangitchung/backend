@@ -16,12 +16,16 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     @Query("SELECT q FROM Question q " +
             "WHERE (" +
-            "  (:userId != -1 AND q.user.id = :userId) " +
-            "  OR (:userId = -1 AND q.user.id != -1)" +
+            "  (:sourceId = 999) OR " +
+            "  (:sourceId != -1 AND q.user.id = :sourceId) OR " +
+            "  (:sourceId = -1 AND q.user.id != :currentUserId)" +
             ") " +
-            "AND (:categoryId = -1 OR q.category.id = :categoryId)")
-    List<Question> findByUserIdAndCategoryIdOptional(
-            @Param("userId") Long userId,
-            @Param("categoryId") Long categoryId
+            "AND (:categoryId = -1 OR q.category.id = :categoryId) " +
+            "AND (:username IS NULL OR :username = '' OR LOWER(q.user.username) LIKE LOWER(CONCAT('%', :username, '%')))")
+    List<Question> findWithFilters(
+            @Param("sourceId") Long sourceId,
+            @Param("categoryId") Long categoryId,
+            @Param("currentUserId") Long currentUserId,
+            @Param("username") String username
     );
 }

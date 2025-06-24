@@ -123,7 +123,12 @@ public class QuestionService {
         answerRepository.deleteAll(question.getAnswers());
     }
 
-    public List<Question> filterByCategoryAndSource(FilterQuestionRequest request) {
-        return questionRepository.findByUserIdAndCategoryIdOptional(request.getUserId(), request.getCategoryId());
+    public List<Question> findWithFilters(FilterQuestionRequest request) {
+        return questionRepository.findWithFilters(
+                request.getSourceId()
+                , request.getCategoryId()
+                , request.getCurrentUserId()
+                , request.getUsername()
+        );
     }
 }

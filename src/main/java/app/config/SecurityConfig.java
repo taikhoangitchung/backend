@@ -43,6 +43,7 @@ public class SecurityConfig {
                                 "/exams/is-exists/**",
                                 "/difficulties",
                                 "/users/check-token/**",
+                                "/users/**",
                                 "/users/recover-password",
                                 "/users/check-duplicate",
                                 "/login/oauth2/code/**",

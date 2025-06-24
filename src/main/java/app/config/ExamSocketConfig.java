@@ -10,15 +10,19 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 public class ExamSocketConfig implements WebSocketConfigurer {
     private final ExamSocketHandler examSocketHandler;
+    private final KickWebSocketHandler kickWebSocketHandler;
 
     @Autowired
-    public ExamSocketConfig(ExamSocketHandler examSocketHandler) {
+    public ExamSocketConfig(ExamSocketHandler examSocketHandler, KickWebSocketHandler kickWebSocketHandler) {
         this.examSocketHandler = examSocketHandler;
+        this.kickWebSocketHandler = kickWebSocketHandler;
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(examSocketHandler, "/ws")
                 .setAllowedOriginPatterns("*");
+        registry.addHandler(kickWebSocketHandler, "/ws/kick")
+                .setAllowedOrigins("*");
     }
 }

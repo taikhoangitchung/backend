@@ -11,7 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class ExamSocketHandler extends TextWebSocketHandler {
-
     private final Map<String, Set<WebSocketSession>> rooms = new ConcurrentHashMap<>();
     private final Map<String, String> sessionRoomMap = new ConcurrentHashMap<>();
     private final Map<String, Integer> submitExpectCount = new ConcurrentHashMap<>();

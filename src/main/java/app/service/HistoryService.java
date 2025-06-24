@@ -114,6 +114,7 @@ public class HistoryService {
             List<Long> selectedIds = item.getSelectedAnswerIds() != null ? item.getSelectedAnswerIds() : List.of();
             boolean isCorrect = new HashSet<>(selectedIds).equals(new HashSet<>(correctIds));
             if (isCorrect) correct++;
+
             choiceResults.add(new HistoryDetailResponse.ChoiceResult(
                     question.getId(),
                     selectedIds,
@@ -131,15 +132,7 @@ public class HistoryService {
         RankResponse rankResponse = null;
         if (history.getRoom() != null) {
             String roomCode = history.getRoom().getCode();
-            List<History> histories = historyRepository.findHistoriesByRoomCode(roomCode);
-            histories.sort(Comparator.comparingDouble(History::getScore).reversed()
-                    .thenComparing(History::getFinishedAt));
-            int rank = 1;
-            for (History h : histories) {
-                if (h.getId().equals(history.getId())) break;
-                rank++;
-            }
-            rankResponse = new RankResponse(rank, histories.size());
+            rankResponse = getUserRank(roomCode);
         }
 
         return new HistoryDetailResponse(
@@ -152,6 +145,7 @@ public class HistoryService {
                 rankResponse
         );
     }
+
 
     private List<Long> getCorrectAnswerIds(Question question) {
         return question.getAnswers().stream()
@@ -220,16 +214,16 @@ public class HistoryService {
 
     public RankResponse getUserRank(String roomCode) {
         List<History> histories = historyRepository.findHistoriesByRoomCode(roomCode);
-        int total = histories.size();
-        int rank = -1;
+        histories.sort(Comparator
+                .comparingDouble(History::getScore).reversed()
+                .thenComparing(History::getFinishedAt));
 
+        List<RankResponse.Rank> rankings = new ArrayList<>();
         for (int i = 0; i < histories.size(); i++) {
             History h = histories.get(i);
-            if (h.getUser().getUsername().equals(userService.findInAuth().getUsername())) {
-                rank = i + 1;
-                break;
-            }
+            rankings.add(new RankResponse.Rank(h.getUser().getUsername(), i + 1));
         }
-        return new RankResponse(rank, total);
+
+        return new RankResponse(histories.size(), rankings);
     }
 }

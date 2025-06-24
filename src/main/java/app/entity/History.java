@@ -23,6 +23,10 @@ public class History {
     @JoinColumn(nullable = false)
     private Exam exam;
 
+    @ManyToOne
+    @JoinColumn
+    private Room room;
+
     private double score;
     
     private long timeTaken;

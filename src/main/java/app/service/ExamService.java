@@ -19,6 +19,7 @@ public class ExamService {
     private final ExamRepository examRepository;
     private final UserRepository userRepository;
     private final QuestionRepository questionRepository;
+    private final RoomRepository roomRepository;
     private final UserService userService;
     private final MessageHelper messageHelper;
     private final DifficultyRepository difficultyRepository;
@@ -90,5 +91,13 @@ public class ExamService {
     public Exam findById(Long id){
         return examRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
+    }
+
+    public PlayExamResponse getToPlayByRoom(String code) {
+        Exam exam = roomRepository.findByCode(code).getExam();
+        PlayExamResponse response = new PlayExamResponse();
+        response.setDuration(exam.getDuration());
+        response.setQuestions(exam.getQuestions());
+        return response;
     }
 }

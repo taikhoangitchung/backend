@@ -1,6 +1,9 @@
 package app.controller;
 
 import app.dto.user.*;
+import app.entity.User;
+import app.service.JwtService;
+import app.service.TokenService;
 import app.service.UserService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;
@@ -13,12 +16,17 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
     private final MessageHelper messageHelper;
+    private final TokenService tokenService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<?> processRegister(@Valid @RequestBody RegisterRequest registerRequest,
@@ -101,5 +109,18 @@ public class UserController {
         duplicateResponse.setDuplicate(isDuplicate);
         duplicateResponse.setMessage(isDuplicate ? messageHelper.get("password.duplicate") : "");
         return ResponseEntity.ok().body(duplicateResponse);
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+        try {
+            String newAccessToken = tokenService.refreshAccessToken(refreshToken);
+            Map<String, String> response = new HashMap<>();
+            response.put("accessToken", newAccessToken);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token không hợp lệ hoặc đã hết hạn");
+        }
     }
 }

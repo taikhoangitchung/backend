@@ -3,7 +3,7 @@ package app.service;
 import app.dto.email.EmailRequest;
 import app.dto.email.SendAnnounceRequest;
 import app.dto.email.SendCodeRequest;
-import app.entity.PasswordRecoverToken;
+import app.entity.Token;
 import app.entity.User;
 import app.exception.EmailException;
 import app.exception.NotFoundException;
@@ -36,12 +36,12 @@ public class EmailService {
                     .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
 
             if (tokenRepository.existsByUser(user)) {
-                PasswordRecoverToken resetToken = tokenRepository.findByUser(user);
+                Token resetToken = tokenRepository.findByUser(user);
                 tokenRepository.deleteById(resetToken.getId());
             }
 
             LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
-            PasswordRecoverToken resetToken = new PasswordRecoverToken();
+            Token resetToken = new Token();
             resetToken.setToken(request.getToken());
             resetToken.setUser(user);
             resetToken.setExpiryDate(expiryDate);

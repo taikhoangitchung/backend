@@ -65,4 +65,3 @@ public class JwtService {
         return extractToken(token).getExpiration();
     }
 }
-

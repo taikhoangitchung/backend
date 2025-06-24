@@ -7,5 +7,7 @@ import lombok.Setter;
 @Setter
 public class FilterQuestionRequest {
     private long categoryId;
-    private long userId;
+    private long sourceId;
+    private long currentUserId;
+    private String username;
 }

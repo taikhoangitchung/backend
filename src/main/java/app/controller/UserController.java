@@ -114,13 +114,10 @@ public class UserController {
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
-        try {
-            String newAccessToken = tokenService.refreshAccessToken(refreshToken);
-            Map<String, String> response = new HashMap<>();
-            response.put("accessToken", newAccessToken);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token không hợp lệ hoặc đã hết hạn");
+        Map<String, String> response = userService.refreshToken(refreshToken);
+        if (response.containsKey("error")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response.get("error"));
         }
+        return ResponseEntity.ok(response);
     }
 }

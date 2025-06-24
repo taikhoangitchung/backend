@@ -35,4 +35,11 @@ public class HistoryController {
     public ResponseEntity<?> getExamSummary(@PathVariable Long examId) {
         return ResponseEntity.ok(historyService.getSummaryByExamId(examId));
     }
+
+    @GetMapping("/exams/{roomCode}/rank")
+    public ResponseEntity<RankResponse> getRank(
+            @PathVariable String roomCode) {
+        RankResponse response = historyService.getUserRank(roomCode);
+        return ResponseEntity.ok(response);
+    }
 }

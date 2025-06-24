@@ -9,6 +9,8 @@ import java.util.List;
 @Getter
 public class AddHistoryRequest {
     private Long examId;
+    private String roomCode;
+
     private long timeTaken;
     private String finishedAt;
     private List<SubmittedChoice> choices;

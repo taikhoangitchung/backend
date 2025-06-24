@@ -1,8 +1,7 @@
 package app.controller;
 
+import app.config.KickWebSocketHandler;
 import app.dto.user.*;
-import app.entity.User;
-import app.service.JwtService;
 import app.service.TokenService;
 import app.service.UserService;
 import app.util.BindingHandler;
@@ -16,6 +15,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,8 +25,14 @@ import java.util.Map;
 public class UserController {
     private final UserService userService;
     private final MessageHelper messageHelper;
+    private final KickWebSocketHandler kickUser;
     private final TokenService tokenService;
-    private final JwtService jwtService;
+
+    @GetMapping("/confirm")
+    public ResponseEntity<?> confirm(@RequestParam("email") String email) {
+        userService.confirmEmail(email);
+        return ResponseEntity.ok(messageHelper.get("email.active.success"));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> processRegister(@Valid @RequestBody RegisterRequest registerRequest,
@@ -55,12 +61,12 @@ public class UserController {
         return ResponseEntity.ok(userService.searchFollowNameAndEmail(keyName, keyEmail));
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+//    @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping("/{userId}/block")
-    public ResponseEntity<?> blockUser(@PathVariable long userId) {
-        userService.blockUser(userId);
+    public ResponseEntity<?> blockUser(@PathVariable long userId) throws IOException{
+        String username = userService.blockUser(userId);
+        kickUser.kickUser(username);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("block.user.success"));
-
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -92,7 +98,7 @@ public class UserController {
 
     @GetMapping("/check-token/{token}")
     public ResponseEntity<?> toRecoverPassword(@PathVariable String token) {
-        if (userService.isValidRecoverToken(token)) return ResponseEntity.ok(true);
+        if (userService.isValidToken(token)) return ResponseEntity.ok(true);
         else return ResponseEntity.ok().body(messageHelper.get("expired.url"));
     }
 

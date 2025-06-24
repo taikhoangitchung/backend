@@ -16,6 +16,7 @@ public class HistoryDetailResponse {
     private double score;
     private List<ChoiceResult> choices;
     private List<QuestionDTO> fullQuestions;
+    private RankResponse rankResponse;
 
     @Getter
     @Setter

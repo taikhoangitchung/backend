@@ -67,7 +67,7 @@ public class UserService {
         user.setActive(false);
         userRepository.save(user);
 
-        return user.getUsername();
+        return user.getEmail();
     }
 
     public boolean isDuplicatePassword(RecoverPasswordRequest request) {

@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -64,8 +63,8 @@ public class UserController {
     @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping("/{userId}/block")
     public ResponseEntity<?> blockUser(@PathVariable long userId) throws IOException{
-        String username = userService.blockUser(userId);
-        kickUser.kickUser(username);
+        String email = userService.blockUser(userId);
+        kickUser.kickUser(email);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("block.user.success"));
     }
 

@@ -18,36 +18,35 @@ public class KickWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(@Nullable WebSocketSession session) {
-        String username = getUsername(session);
+        String email = getEmail(session);
 
-        if (username != null) {
-            sessions.put(username, session);
+        if (email != null) {
+            sessions.put(email, session);
         }
     }
 
     @Override
     public void afterConnectionClosed(@Nullable WebSocketSession session, @Nullable CloseStatus status) {
-        String username = getUsername(session);
-        if (username != null) {
-            sessions.remove(username);
+        String email = getEmail(session);
+        if (email != null) {
+            sessions.remove(email);
         }
     }
 
-    public void kickUser(String username) throws IOException {
-        WebSocketSession session = sessions.get(username);
+    public void kickUser(String email) throws IOException {
+        WebSocketSession session = sessions.get(email);
         if (session != null && session.isOpen()) {
             session.sendMessage(new TextMessage("KICK"));
             session.close();
         }
     }
 
-    private String getUsername(@Nullable WebSocketSession session) {
+    private String getEmail(@Nullable WebSocketSession session) {
         if (session != null) {
             URI uri = session.getUri();
             if (uri == null) return null;
-
             String query = uri.getQuery();
-            if (query != null && query.startsWith("username=")) {
+            if (query != null && query.startsWith("email=")) {
                 return query.split("=")[1];
             }
         }

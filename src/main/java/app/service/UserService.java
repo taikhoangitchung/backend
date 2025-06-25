@@ -59,7 +59,7 @@ public class UserService {
     }
 
     public List<User> searchFollowNameAndEmail(String keyName, String keyEmail) {
-        return userRepository.searchFollowNameAndEmail(keyName, keyEmail);
+        return userRepository.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(keyName, keyEmail);
     }
 
     public String blockUser(long userId) {

@@ -56,4 +56,11 @@ public class ExamController {
     public ResponseEntity<?> existsByName(@PathVariable String title) {
         return ResponseEntity.status(HttpStatus.OK).body(examService.existExam(title));
     }
+
+    @DeleteMapping("{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        examService.delete(id);
+        return ResponseEntity.ok().body(messageHelper.get("delete.success"));
+    }
+
 }

@@ -61,7 +61,7 @@ public class UserController {
         return ResponseEntity.ok(userService.searchFollowNameAndEmail(keyName, keyEmail));
     }
 
-//    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping("/{userId}/block")
     public ResponseEntity<?> blockUser(@PathVariable long userId) throws IOException{
         String username = userService.blockUser(userId);

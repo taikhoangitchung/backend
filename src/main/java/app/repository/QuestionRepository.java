@@ -16,7 +16,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     @Query("SELECT q FROM Question q " +
             "WHERE (" +
-            "  (:sourceId = 999) OR " +
+            "  (:sourceId = -999) OR " +
             "  (:sourceId != -1 AND q.user.id = :sourceId) OR " +
             "  (:sourceId = -1 AND q.user.id != :currentUserId)" +
             ") " +

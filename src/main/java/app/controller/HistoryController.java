@@ -22,8 +22,8 @@ public class HistoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<HistorySummaryResponse>> getHistory() {
-        return ResponseEntity.ok(historyService.getAllSummary());
+    public ResponseEntity<List<MyHistoryResponse>> getHistory() {
+        return ResponseEntity.ok(historyService.getAllMy());
     }
 
     @GetMapping("/{id}")
@@ -36,10 +36,9 @@ public class HistoryController {
         return ResponseEntity.ok(historyService.getSummaryByExamId(examId));
     }
 
-    @GetMapping("/exams/{roomCode}/rank")
-    public ResponseEntity<RankResponse> getRank(
+    @GetMapping("/{roomCode}/rank")
+    public ResponseEntity<?> getRank(
             @PathVariable String roomCode) {
-        RankResponse response = historyService.getUserRank(roomCode);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok().body(historyService.getRoomRanking(roomCode));
     }
 }

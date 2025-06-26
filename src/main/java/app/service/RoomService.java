@@ -4,7 +4,6 @@ import app.dto.room.CreateRoomRequest;
 import app.dto.room.RoomWaitingResponse;
 import app.entity.Room;
 import app.entity.User;
-import app.exception.AuthException;
 import app.exception.LockedException;
 import app.exception.NotFoundException;
 import app.repository.RoomRepository;
@@ -26,9 +25,9 @@ public class RoomService {
     public String createRoom(CreateRoomRequest request) {
         Room room = new Room();
         room.setExam(examService.findById(request.getExamId()));
-        room.setHost(userService.findInAuth());
         room.setStatus(Room.Status.WAITING);
         room.setCode(generateRoomCode());
+        room.setHost(userService.findInAuth());
         roomRepository.save(room);
         return room.getCode();
     }
@@ -43,11 +42,6 @@ public class RoomService {
 
     public void startRoom(String code) {
         Room room = findByCode(code);
-        User currentUser = userService.findInAuth();
-
-        if (!room.getHost().equals(currentUser)) {
-            throw new AuthException(messageHelper.get("room.host.not.match"));
-        }
 
         if (room.getStatus() != Room.Status.WAITING) {
             throw new LockedException(messageHelper.get("room.locked"));
@@ -74,7 +68,7 @@ public class RoomService {
 
         User user = userService.findInAuth();
         boolean alreadyJoined = room.getCandidates().stream()
-                .anyMatch(foundUser -> foundUser.getId().equals(user.getId()));
+                .anyMatch(foundUser -> foundUser.getId().equals(user.getId())) || user.getId().equals(room.getHost().getId());
         if (!alreadyJoined) {
             room.getCandidates().add(user);
             roomRepository.save(room);
@@ -83,11 +77,9 @@ public class RoomService {
                 .map(User::getUsername)
                 .toList();
         return new RoomWaitingResponse(
-                room.getCode(),
                 room.getExam().getTitle(),
                 room.getExam().getAuthor().getUsername(),
-                room.getStatus(),
-                room.getHost().getUsername(),
+                room.getHost().getEmail(),
                 candidateNames
         );
     }
@@ -100,20 +92,9 @@ public class RoomService {
         return foundRoom;
     }
 
-    public RoomWaitingResponse leaveRoom(String code) {
+    public void leaveRoom(String code) {
         Room room = findByCode(code);
         room.getCandidates().remove(userService.findInAuth());
         roomRepository.save(room);
-        List<String> candidateNames = room.getCandidates().stream()
-                .map(User::getUsername)
-                .toList();
-        return new RoomWaitingResponse(
-                room.getCode(),
-                room.getExam().getTitle(),
-                room.getExam().getAuthor().getUsername(),
-                room.getStatus(),
-                room.getHost().getUsername(),
-                candidateNames
-        );
     }
 }

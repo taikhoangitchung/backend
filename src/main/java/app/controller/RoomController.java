@@ -26,7 +26,8 @@ public class RoomController {
 
     @PatchMapping("/{code}/leave")
     public ResponseEntity<?> leaveRoom(@PathVariable String code) {
-        return ResponseEntity.ok().body(roomService.leaveRoom(code));
+        roomService.leaveRoom(code);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{code}/check")

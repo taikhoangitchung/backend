@@ -7,10 +7,9 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class HistorySummaryResponse {
-    private Long id;
+public class MyHistoryResponse {
+    Long historyId;
     private String examTitle;
-    private String username;
     private LocalDateTime finishedAt;
     private long timeTaken;
     private double score;

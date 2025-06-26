@@ -66,21 +66,25 @@ public class QuestionService {
         question.setAnswers(request.getAnswers());
 
         if (image != null && !image.isEmpty()) {
-            String fileName = image.getOriginalFilename();
-            if (fileName == null || fileName.trim().isEmpty()) {
-                throw new UploadException(messageHelper.get("file.name.invalid"));
+            try {
+                String fileName = image.getOriginalFilename();
+                if (fileName == null || fileName.trim().isEmpty()) {
+                    throw new UploadException(messageHelper.get("file.name.invalid"));
+                }
+                Path uploadPath = Paths.get(uploadDirectory, fileName);
+                if (Files.exists(uploadPath)) {
+                    String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+                    String fileExt = fileName.substring(fileName.lastIndexOf('.'));
+                    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+                    fileName = fileNameWithoutExt + "_" + timestamp + fileExt;
+                    uploadPath = Paths.get(uploadDirectory, fileName);
+                }
+                Files.createDirectories(uploadPath.getParent());
+                Files.copy(image.getInputStream(), uploadPath);
+                question.setImage(urlPrefix + fileName);
+            } catch (IOException e) {
+                throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
             }
-            Path uploadPath = Paths.get(uploadDirectory, "media", fileName); // Tạo upload/media/
-            if (Files.exists(uploadPath)) {
-                String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-                String fileExt = fileName.substring(fileName.lastIndexOf('.'));
-                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-                fileName = fileNameWithoutExt + "_" + timestamp + fileExt;
-                uploadPath = Paths.get(uploadDirectory, "media", fileName); // Tạo upload/media/
-            }
-            Files.createDirectories(uploadPath.getParent());
-            Files.copy(image.getInputStream(), uploadPath);
-            question.setImage(urlPrefix + fileName); // Sử dụng urlPrefix đã bao gồm /media/
         }
 
         questionRepository.save(question);
@@ -147,21 +151,25 @@ public class QuestionService {
         }
 
         if (image != null && !image.isEmpty()) {
-            String fileName = image.getOriginalFilename();
-            if (fileName == null || fileName.trim().isEmpty()) {
-                throw new UploadException(messageHelper.get("file.name.invalid"));
+            try {
+                String fileName = image.getOriginalFilename();
+                if (fileName == null || fileName.trim().isEmpty()) {
+                    throw new UploadException(messageHelper.get("file.name.invalid"));
+                }
+                Path uploadPath = Paths.get(uploadDirectory, fileName);
+                if (Files.exists(uploadPath)) {
+                    String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+                    String fileExt = fileName.substring(fileName.lastIndexOf('.'));
+                    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+                    fileName = fileNameWithoutExt + "_" + timestamp + fileExt;
+                    uploadPath = Paths.get(uploadDirectory, fileName);
+                }
+                Files.createDirectories(uploadPath.getParent());
+                Files.copy(image.getInputStream(), uploadPath);
+                question.setImage(urlPrefix + fileName);
+            } catch (IOException e) {
+                throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
             }
-            Path uploadPath = Paths.get(uploadDirectory, "media", fileName); // Tạo upload/media/
-            if (Files.exists(uploadPath)) {
-                String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-                String fileExt = fileName.substring(fileName.lastIndexOf('.'));
-                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-                fileName = fileNameWithoutExt + "_" + timestamp + fileExt;
-                uploadPath = Paths.get(uploadDirectory, "media", fileName); // Tạo upload/media/
-            }
-            Files.createDirectories(uploadPath.getParent());
-            Files.copy(image.getInputStream(), uploadPath);
-            question.setImage(urlPrefix + fileName); // Sử dụng urlPrefix đã bao gồm /media/
         }
 
         questionRepository.save(question);

@@ -93,7 +93,6 @@ public class UserService {
 
     public boolean isValidToken(String token) {
         try {
-            System.err.println(token);
             Token resetToken = tokenRepository.findByToken(token);
             if (resetToken != null) {
                 if (!LocalDateTime.now().isAfter(resetToken.getExpiryDate())) {

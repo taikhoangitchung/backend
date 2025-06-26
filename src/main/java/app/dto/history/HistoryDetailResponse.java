@@ -10,13 +10,15 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 public class HistoryDetailResponse {
+    private String username;
+    private String avatarUrl;
+    private int rank;
     private int correct;
     private int wrong;
     private long timeTaken;
     private double score;
     private List<ChoiceResult> choices;
     private List<QuestionDTO> fullQuestions;
-    private RankResponse rankResponse;
 
     @Getter
     @Setter
@@ -27,6 +29,7 @@ public class HistoryDetailResponse {
         private List<Long> correctAnswerIds;
         private boolean isCorrect;
     }
+
     @Getter
     @Setter
     @AllArgsConstructor

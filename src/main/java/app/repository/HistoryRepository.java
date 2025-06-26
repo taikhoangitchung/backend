@@ -1,9 +1,9 @@
 package app.repository;
 
+import app.entity.Exam;
 import app.entity.History;
+import app.entity.Room;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -12,15 +12,9 @@ import java.util.List;
 public interface HistoryRepository extends JpaRepository<History, Long> {
     List<History> findByUserIdOrderByFinishedAtDesc(Long userId);
 
-    @Query("SELECT h.user.id, COUNT(h) FROM History h WHERE h.exam.id = :examId GROUP BY h.user.id")
-    List<Object[]> countAttemptsPerUserByExam(@Param("examId") Long examId);
+    List<History> findByRoomOrderByScoreDesc(Room room);
 
-    @Query("""
-            SELECT h FROM History h
-            WHERE h.room.code = :roomCode
-            ORDER BY h.score DESC, h.timeTaken ASC
-            """)
-    List<History> findHistoriesByRoomCode(@Param("roomCode") String roomCode);
+    List<History> findByExamOrderByUserIdAscFinishedAtAsc(Exam exam);
 
-    List<History> findByExamId(Long examId);
+    List<History> findByRoomOrderByScoreDescTimeTakenAsc(Room room);
 }

@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +22,6 @@ public class ExamService {
     private final UserRepository userRepository;
     private final QuestionRepository questionRepository;
     private final RoomRepository roomRepository;
-    private final UserService userService;
     private final MessageHelper messageHelper;
     private final DifficultyRepository difficultyRepository;
     private final CategoryRepository categoryRepository;
@@ -98,6 +99,8 @@ public class ExamService {
         PlayExamResponse response = new PlayExamResponse();
         response.setDuration(exam.getDuration());
         response.setQuestions(exam.getQuestions());
+        Set<User> candidates = roomRepository.findByCode(code).getCandidates();
+        response.setCandidates(candidates);
         return response;
     }
 

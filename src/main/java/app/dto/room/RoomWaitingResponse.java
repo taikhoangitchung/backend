@@ -1,6 +1,5 @@
 package app.dto.room;
 
-import app.entity.Room;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,10 +10,8 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 public class RoomWaitingResponse {
-    private String roomCode;
     private String examTitle;
     private String authorName;
-    private Room.Status status;
-    private String hostName;
+    private String hostEmail;
     private List<String> candidateNames;
 }

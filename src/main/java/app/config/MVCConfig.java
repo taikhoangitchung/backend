@@ -13,6 +13,7 @@ public class MVCConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins("http://localhost:3000") // Địa chỉ frontend
+                .allowedOrigins("http://localhost:3001") // Địa chỉ frontend
                 .allowedMethods("*")
                 .allowedHeaders("*")
                 .allowCredentials(true);

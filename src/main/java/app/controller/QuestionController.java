@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,6 +26,13 @@ public class QuestionController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getAllByUser(@PathVariable long userId) {
         return ResponseEntity.status(HttpStatus.OK).body(questionService.findByUserId(userId));
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<?> importFromExcel(@RequestParam("file") MultipartFile file,
+                                             @RequestParam("userId") long userId) {
+        questionService.addAllQuestionFromExcel(file, userId);
+        return ResponseEntity.ok(messageHelper.get("excel.import.success"));
     }
 
     @PostMapping("/filter")

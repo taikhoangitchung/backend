@@ -57,4 +57,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> expiredExceptionHandler(NotActiveException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(ExcelImportException.class)
+    public ResponseEntity<?> excelImportExceptionHandler(ExcelImportException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

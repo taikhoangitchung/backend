@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,15 +41,23 @@ public class QuestionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editQuestion(@RequestBody EditQuestionRequest request, @PathVariable long id) {
-        questionService.update(request,id);
-        return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("update.success"));
+    public ResponseEntity<?> editQuestion(@RequestBody EditQuestionRequest request, @PathVariable long id, @RequestParam(required = false) MultipartFile image) {
+        try {
+            questionService.update(request, id, image);
+            return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("update.success"));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(messageHelper.get("upload.failed"));
+        }
     }
 
     @PostMapping
-    public ResponseEntity<?> createQuestion(@RequestBody AddQuestionRequest request) {
-        questionService.addQuestion(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("question.create.success"));
+    public ResponseEntity<?> createQuestion(@ModelAttribute AddQuestionRequest request, @RequestParam(required = false) MultipartFile image) {
+        try {
+            questionService.addQuestion(request, image);
+            return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("question.create.success"));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(messageHelper.get("upload.failed"));
+        }
     }
 
     @DeleteMapping("/{id}")

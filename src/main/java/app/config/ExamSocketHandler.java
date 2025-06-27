@@ -1,17 +1,20 @@
 package app.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Component
 public class ExamSocketHandler extends TextWebSocketHandler {
     private final Map<String, Set<WebSocketSession>> rooms = new ConcurrentHashMap<>();
     private final Map<String, Integer> submitExpectCount = new ConcurrentHashMap<>();
     private final Map<String, Integer> submittedCount = new ConcurrentHashMap<>();
+    private final Map<String, List<Map<String, String>>> submittedUsersByRoom = new ConcurrentHashMap<>();
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
@@ -21,6 +24,7 @@ public class ExamSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         String payload = message.getPayload();
+        System.out.println("Đã nhận " + payload);
 
         if (payload.startsWith("JOIN:")) {
             String[] parts = payload.split(":");
@@ -35,14 +39,37 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                 session.getAttributes().put("email", email);
                 session.getAttributes().put("username", username);
 
-                broadcast(roomId, String.format("""
-                    {
-                        "type": "JOIN",
-                        "username": "%s"
-                    }
-                """, username));
-            }
+                Set<WebSocketSession> roomSessions = rooms.get(roomId);
 
+                if (roomSessions.size() == 1) {
+                    session.getAttributes().put("host", true);
+                }
+
+                String hostEmail = roomSessions.stream()
+                        .filter(s -> Boolean.TRUE.equals(s.getAttributes().get("host")))
+                        .map(s -> (String) s.getAttributes().get("email"))
+                        .findFirst()
+                        .orElse(null);
+
+                String candidateList = roomSessions.stream()
+                        .filter(s -> {
+                            String e = (String) s.getAttributes().get("email");
+                            return e != null && !e.equals(hostEmail);
+                        })
+                        .map(s -> (String) s.getAttributes().get("username"))
+                        .filter(Objects::nonNull)
+                        .map(name -> "\"" + name + "\"")
+                        .collect(Collectors.joining(","));
+                String response = String.format("""
+                            {
+                                "type": "JOIN",
+                                "username": "%s",
+                                "email": "%s",
+                                "candidates": [%s]
+                            }
+                        """, username, email, candidateList);
+                broadcast(roomId, response);
+            }
         } else if (payload.startsWith("START:")) {
             String[] parts = payload.split(":");
             if (parts.length >= 3) {
@@ -53,28 +80,34 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                 submittedCount.put(roomId, 0);
 
                 broadcast(roomId, """
-                    {
-                        "type": "START"
-                    }
-                """);
+                            {
+                                "type": "START"
+                            }
+                        """);
             }
-
         } else if (payload.startsWith("SUBMIT:")) {
             String[] parts = payload.split(":");
             if (parts.length >= 2) {
                 String roomId = parts[1];
                 String email = (String) session.getAttributes().get("email");
                 String username = (String) session.getAttributes().get("username");
-
                 submittedCount.compute(roomId, (k, v) -> (v == null ? 1 : v + 1));
-
+                submittedUsersByRoom.computeIfAbsent(roomId, k -> new ArrayList<>());
+                List<Map<String, String>> submittedList = submittedUsersByRoom.get(roomId);
+                boolean alreadySubmitted = submittedList.stream()
+                        .anyMatch(user -> user.get("email").equals(email));
+                if (!alreadySubmitted) {
+                    Map<String, String> userInfo = new HashMap<>();
+                    userInfo.put("email", email);
+                    userInfo.put("username", username);
+                    submittedList.add(userInfo);
+                }
                 broadcast(roomId, String.format("""
-                    {
-                        "type": "SUBMIT",
-                        "email": "%s",
-                        "username":"%s"
-                    }
-                """, email, username));
+                            {
+                                "type": "SUBMIT",
+                                "users": %s
+                            }
+                        """, new ObjectMapper().writeValueAsString(submittedList)));
                 checkAndBroadcastEnd(roomId);
             }
         }
@@ -86,10 +119,10 @@ public class ExamSocketHandler extends TextWebSocketHandler {
         if (submitted >= expected && expected > 0) {
             try {
                 broadcast(roomId, """
-                    {
-                        "type": "END"
-                    }
-                """);
+                            {
+                                "type": "END"
+                            }
+                        """);
                 submittedCount.remove(roomId);
                 submitExpectCount.remove(roomId);
             } catch (Exception e) {
@@ -113,21 +146,42 @@ public class ExamSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         String roomId = (String) session.getAttributes().get("roomId");
         String email = (String) session.getAttributes().get("email");
+        String username = (String) session.getAttributes().get("username");
 
-        if (roomId != null && rooms.containsKey(roomId)) {
-            rooms.get(roomId).remove(session);
-        }
+        if (roomId != null) {
+            Set<WebSocketSession> room = rooms.get(roomId);
+            if (room != null) {
+                room.remove(session);
 
-        if (email != null && roomId != null) {
-            try {
-                broadcast(roomId, String.format("""
-                    {
-                        "type": "LEAVE",
-                        "email": "%s"
-                    }
-                """, email));
-            } catch (Exception e) {
-                e.printStackTrace();
+                String hostEmail = room.stream()
+                        .filter(s -> Boolean.TRUE.equals(s.getAttributes().get("host")))
+                        .map(s -> (String) s.getAttributes().get("email"))
+                        .findFirst()
+                        .orElse(null);
+                String candidateList = room.stream()
+                        .filter(s -> {
+                            String e = (String) s.getAttributes().get("email");
+                            return e != null && !e.equals(hostEmail);
+                        })
+                        .map(s -> (String) s.getAttributes().get("username"))
+                        .filter(Objects::nonNull)
+                        .map(name -> "\"" + name + "\"")
+                        .collect(Collectors.joining(","));
+                String leaveMessage = String.format("""
+                            {
+                                "type": "LEAVE",
+                                "username": "%s",
+                                "email": "%s",
+                                "candidates": [%s]
+                            }
+                        """, username, email, candidateList);
+
+                try {
+                    broadcast(roomId, leaveMessage);
+                } catch (Exception e) {
+                    System.err.println("❌ Failed to broadcast LEAVE message:");
+                    e.printStackTrace();
+                }
             }
         }
     }

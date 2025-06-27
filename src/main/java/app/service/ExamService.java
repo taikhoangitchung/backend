@@ -12,8 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -66,10 +64,12 @@ public class ExamService {
 
     public PlayExamResponse getToPlayById(Long id) {
         Exam exam = findById(id);
-        PlayExamResponse response = new PlayExamResponse();
-        response.setDuration(exam.getDuration());
-        response.setQuestions(exam.getQuestions());
-        return response;
+        return new PlayExamResponse(
+                exam.getDuration(),
+                exam.getQuestions(),
+                null,
+                null
+        );
     }
 
     public List<ExamSummaryResponse> getExamsByCategory(Long categoryId) {
@@ -89,19 +89,20 @@ public class ExamService {
         return examRepository.existsByTitle(title);
     }
 
-    public Exam findById(Long id){
+    public Exam findById(Long id) {
         return examRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
     }
 
     public PlayExamResponse getToPlayByRoom(String code) {
-        Exam exam = roomRepository.findByCode(code).getExam();
-        PlayExamResponse response = new PlayExamResponse();
-        response.setDuration(exam.getDuration());
-        response.setQuestions(exam.getQuestions());
-        Set<User> candidates = roomRepository.findByCode(code).getCandidates();
-        response.setCandidates(candidates);
-        return response;
+        Room foundRoom = roomRepository.findByCode(code);
+        Exam exam = foundRoom.getExam();
+        return new PlayExamResponse(
+                exam.getDuration(),
+                exam.getQuestions(),
+                foundRoom.getCandidates(),
+                foundRoom.getHost().getEmail()
+        );
     }
 
     public void delete(Long id) {

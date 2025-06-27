@@ -15,4 +15,5 @@ public class QuestionInfoResponse {
     private String type;
     private String difficulty;
     private List<Answer> answers;
+    private String image; // Thêm trường để phản hồi đường dẫn ảnh
 }

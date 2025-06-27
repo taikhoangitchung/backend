@@ -5,6 +5,7 @@ import app.entity.*;
 import app.exception.ExcelImportException;
 import app.exception.LockedException;
 import app.exception.NotFoundException;
+import app.exception.UploadException;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +41,12 @@ public class QuestionService {
     private final DifficultyRepository difficultyRepository;
     private final MessageHelper messageHelper;
 
+    @Value("${upload.directory}")
+    private String uploadDirectory;
+
+    @Value("${upload.url.prefix}")
+    private String urlPrefix;
+
     @Value("${admin.username}")
     private String adminUsername;
 
@@ -41,7 +55,7 @@ public class QuestionService {
     }
 
     @Transactional
-    public void addQuestion(AddQuestionRequest request) {
+    public void addQuestion(AddQuestionRequest request, MultipartFile image) throws IOException {
         Question question = new Question();
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User foundUser = userRepository.findByEmail(userEmail)
@@ -55,6 +69,29 @@ public class QuestionService {
             item.setQuestion(question);
         }
         question.setAnswers(request.getAnswers());
+
+        if (image != null && !image.isEmpty()) {
+            try {
+                String fileName = image.getOriginalFilename();
+                if (fileName == null || fileName.trim().isEmpty()) {
+                    throw new UploadException(messageHelper.get("file.name.invalid"));
+                }
+                Path uploadPath = Paths.get(uploadDirectory, fileName);
+                if (Files.exists(uploadPath)) {
+                    String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+                    String fileExt = fileName.substring(fileName.lastIndexOf('.'));
+                    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+                    fileName = fileNameWithoutExt + "_" + timestamp + fileExt;
+                    uploadPath = Paths.get(uploadDirectory, fileName);
+                }
+                Files.createDirectories(uploadPath.getParent());
+                Files.copy(image.getInputStream(), uploadPath);
+                question.setImage(urlPrefix + fileName);
+            } catch (IOException e) {
+                throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
+            }
+        }
+
         questionRepository.save(question);
     }
 
@@ -132,6 +169,9 @@ public class QuestionService {
                     response.setType(question.getType().getName());
                     response.setDifficulty(question.getDifficulty().getName());
                     response.setAnswers(question.getAnswers());
+                    if (question.getImage() != null) {
+                        response.setImage(question.getImage());
+                    }
                     return response;
                 })
                 .toList();
@@ -143,7 +183,7 @@ public class QuestionService {
     }
 
     @Transactional
-    public void update(EditQuestionRequest request, long id) {
+    public void update(EditQuestionRequest request, long id, MultipartFile image) throws IOException {
         Question question = findById(id);
         if (!question.getExams().isEmpty()) {
             throw new LockedException(messageHelper.get("question.update.conflict"));
@@ -174,6 +214,29 @@ public class QuestionService {
             item.setQuestion(question);
             question.getAnswers().add(item);
         }
+
+        if (image != null && !image.isEmpty()) {
+            try {
+                String fileName = image.getOriginalFilename();
+                if (fileName == null || fileName.trim().isEmpty()) {
+                    throw new UploadException(messageHelper.get("file.name.invalid"));
+                }
+                Path uploadPath = Paths.get(uploadDirectory, fileName);
+                if (Files.exists(uploadPath)) {
+                    String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+                    String fileExt = fileName.substring(fileName.lastIndexOf('.'));
+                    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+                    fileName = fileNameWithoutExt + "_" + timestamp + fileExt;
+                    uploadPath = Paths.get(uploadDirectory, fileName);
+                }
+                Files.createDirectories(uploadPath.getParent());
+                Files.copy(image.getInputStream(), uploadPath);
+                question.setImage(urlPrefix + fileName);
+            } catch (IOException e) {
+                throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
+            }
+        }
+
         questionRepository.save(question);
     }
 
@@ -184,16 +247,25 @@ public class QuestionService {
             throw new LockedException(messageHelper.get("question.delete.conflict"));
         }
 
+        if (question.getImage() != null) {
+            try {
+                Path path = Paths.get(uploadDirectory, "media", question.getImage().replace(urlPrefix, "").replaceFirst("/", ""));
+                Files.deleteIfExists(path);
+            } catch (IOException e) {
+                // Log error but continue deletion
+            }
+        }
+
         questionRepository.delete(question);
         answerRepository.deleteAll(question.getAnswers());
     }
 
     public List<Question> findWithFilters(FilterQuestionRequest request) {
         return questionRepository.findWithFilters(
-                request.getSourceId()
-                , request.getCategoryId()
-                , request.getCurrentUserId()
-                , request.getUsername()
+                request.getSourceId(),
+                request.getCategoryId(),
+                request.getCurrentUserId(),
+                request.getUsername()
         );
     }
 }

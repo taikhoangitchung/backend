@@ -3,17 +3,14 @@ package app.service;
 import app.dto.history.*;
 import app.entity.*;
 import app.exception.NotFoundException;
+import app.mapper.HistoryMapper;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import app.dto.history.HistoryDetailResponse.*;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -45,125 +42,109 @@ public class HistoryService {
         history.setTimeTaken(request.getTimeTaken());
         history.setFinishedAt(LocalDateTime.parse(request.getFinishedAt()));
 
-        List<UserChoice> userChoices = new ArrayList<>();
-        int correctCount = 0;
-
-        for (AddHistoryRequest.SubmittedChoice submitted : request.getChoices()) {
+        List<UserChoice> userChoices = request.getChoices().stream().map(submitted -> {
             Question question = questionService.findById(submitted.getQuestionId());
-            List<Long> selectedIds = submitted.getAnswerIds();
-            List<Long> correctIds = getCorrectAnswerIds(question);
+            UserChoice choice = new UserChoice();
+            choice.setHistory(history);
+            choice.setQuestion(question);
+            choice.setSelectedAnswerIds(submitted.getAnswerIds());
+            return choice;
+        }).toList();
 
-            boolean isCorrect = new HashSet<>(selectedIds).equals(new HashSet<>(correctIds));
-            if (isCorrect) correctCount++;
-
-            UserChoice userChoice = new UserChoice();
-            userChoice.setHistory(history);
-            userChoice.setQuestion(question);
-            userChoice.setSelectedAnswerIds(selectedIds);
-            userChoices.add(userChoice);
-        }
-
-        double rawScore = ((double) correctCount / request.getChoices().size()) * 100;
-        double score = BigDecimal.valueOf(rawScore).setScale(1, RoundingMode.HALF_UP).doubleValue();
-
-        history.setScore(score);
-        history.setPassed(score >= exam.getPassScore());
+        history.setUserChoices(userChoices);
+        history.calculateScore();
         exam.setPlayedTimes(exam.getPlayedTimes() + 1);
-
         historyRepository.save(history);
         userChoiceRepository.saveAll(userChoices);
         return history.getId();
     }
 
-    public List<HistorySummaryResponse> getAllSummary() {
+    public List<MyHistoryResponse> getAllMy() {
         User foundUser = userService.findInAuth();
         List<History> histories = historyRepository.findByUserIdOrderByFinishedAtDesc(foundUser.getId());
-
-        Map<Long, List<History>> grouped = histories.stream()
-                .collect(Collectors.groupingBy(h -> h.getExam().getId()));
-
-        return histories.stream().map(history -> {
-            List<History> examHistories = grouped.get(history.getExam().getId());
-            int attempt = (int) examHistories.stream()
-                    .filter(h -> h.getFinishedAt().isBefore(history.getFinishedAt()))
-                    .count() + 1;
-
-            HistorySummaryResponse dto = new HistorySummaryResponse();
-            dto.setId(history.getId());
-            dto.setExamTitle(history.getExam().getTitle());
-            dto.setUsername(history.getUser().getUsername());
-            dto.setFinishedAt(history.getFinishedAt());
-            dto.setScore(history.getScore());
-            dto.setPassed(history.isPassed());
-            dto.setTimeTaken(history.getTimeTaken());
-            dto.setAttemptTime(attempt);
-            return dto;
-        }).toList();
+        Map<Long, Integer> examAttemptCounter = new HashMap<>();
+        List<MyHistoryResponse> responses = new ArrayList<>();
+        for (History history : histories) {
+            Long examId = history.getExam().getId();
+            int attemptTime = examAttemptCounter.getOrDefault(examId, 0) + 1;
+            examAttemptCounter.put(examId, attemptTime);
+            MyHistoryResponse response = HistoryMapper.toMyHistoryResponse(history, attemptTime);
+            responses.add(response);
+        }
+        return responses;
     }
 
     public HistoryDetailResponse getDetailById(Long id) {
         History history = findById(id);
+        User user = history.getUser();
+        Exam exam = history.getExam();
+
         List<UserChoice> userChoices = history.getUserChoices();
+        List<Question> questions = exam.getQuestions();
+
+        int correct = 0;
+        int wrong = 0;
 
         List<HistoryDetailResponse.ChoiceResult> choiceResults = new ArrayList<>();
-        int correct = 0;
+        for (UserChoice uc : userChoices) {
+            Question question = uc.getQuestion();
+            List<Long> correctAnswerIds = question.getCorrectAnswerIds();
+            List<Long> selectedIds = uc.getSelectedAnswerIds();
 
-        for (UserChoice item : userChoices) {
-            Question question = item.getQuestion();
-            List<Long> correctIds = getCorrectAnswerIds(question);
-            List<Long> selectedIds = item.getSelectedAnswerIds() != null ? item.getSelectedAnswerIds() : List.of();
-            boolean isCorrect = new HashSet<>(selectedIds).equals(new HashSet<>(correctIds));
+            boolean isCorrect = selectedIds != null &&
+                    new HashSet<>(selectedIds).equals(new HashSet<>(correctAnswerIds));
+
             if (isCorrect) correct++;
+            else wrong++;
 
             choiceResults.add(new HistoryDetailResponse.ChoiceResult(
                     question.getId(),
                     selectedIds,
-                    correctIds,
+                    correctAnswerIds,
                     isCorrect
             ));
         }
 
-        int wrong = userChoices.size() - correct;
-
-        List<HistoryDetailResponse.QuestionDTO> fullQuestions = userChoices.stream()
-                .map(item -> toQuestionDTO(item.getQuestion()))
+        List<HistoryDetailResponse.QuestionDTO> fullQuestions = questions.stream()
+                .map(q -> new HistoryDetailResponse.QuestionDTO(
+                        q.getId(),
+                        q.getContent(),
+                        q.getAnswers().stream()
+                                .map(a -> new HistoryDetailResponse.AnswerDTO(
+                                        a.getId(),
+                                        a.getContent(),
+                                        a.getCorrect()
+                                ))
+                                .toList()
+                ))
                 .toList();
-
-        RankResponse rankResponse = null;
-        if (history.getRoom() != null) {
-            String roomCode = history.getRoom().getCode();
-            rankResponse = getUserRank(roomCode);
-        }
-
+        int rank = calculateRankInRoom(history);
         return new HistoryDetailResponse(
+                user.getUsername(),
+                user.getAvatar(),
+                rank,
                 correct,
                 wrong,
                 history.getTimeTaken(),
                 history.getScore(),
                 choiceResults,
-                fullQuestions,
-                rankResponse
+                fullQuestions
         );
     }
 
+    private int calculateRankInRoom(History targetHistory) {
+        Room room = targetHistory.getRoom();
+        if (room == null) return -1;
 
-    private List<Long> getCorrectAnswerIds(Question question) {
-        return question.getAnswers().stream()
-                .filter(Answer::getCorrect)
-                .map(Answer::getId)
-                .toList();
+        List<History> histories = historyRepository.findByRoomOrderByScoreDesc(room);
+        for (int i = 0; i < histories.size(); i++) {
+            if (histories.get(i).getId().equals(targetHistory.getId())) {
+                return i + 1;
+            }
+        }
+        return -1;
     }
 
-    private QuestionDTO toQuestionDTO(Question question) {
-        List<AnswerDTO> answers = question.getAnswers().stream()
-                .map(this::toAnswerDTO)
-                .toList();
-        return new QuestionDTO(question.getId(), question.getContent(), answers);
-    }
-
-    private AnswerDTO toAnswerDTO(Answer answer) {
-        return new AnswerDTO(answer.getId(), answer.getContent(), answer.getCorrect());
-    }
 
     public History findById(Long id) {
         return historyRepository.findById(id)
@@ -171,59 +152,56 @@ public class HistoryService {
     }
 
     public List<ExamSummaryHistoryResponse> getSummaryByExamId(Long examId) {
-        List<History> histories = historyRepository.findByExamId(examId);
-        Map<Long, List<History>> userHistoriesMap = histories.stream()
-                .collect(Collectors.groupingBy(h -> h.getUser().getId()));
+        Exam exam = examService.findById(examId);
+        List<History> histories = historyRepository.findByExamOrderByUserIdAscFinishedAtAsc(exam);
 
-        Map<Long, Integer> historyAttemptOrders = new HashMap<>();
-        for (Map.Entry<Long, List<History>> entry : userHistoriesMap.entrySet()) {
-            List<History> userHistories = entry.getValue();
-            userHistories.sort(Comparator.comparing(History::getFinishedAt));
-            for (int i = 0; i < userHistories.size(); i++) {
-                historyAttemptOrders.put(userHistories.get(i).getId(), i + 1);
-            }
-        }
+        List<ExamSummaryHistoryResponse> responses = new ArrayList<>();
+        Map<Long, Long> userAttemptCount = new HashMap<>(); // userId -> current count
 
-        histories.sort(Comparator
-                .comparingDouble(History::getScore).reversed()
-                .thenComparingLong(History::getTimeTaken));
-
-        List<ExamSummaryHistoryResponse> result = new ArrayList<>();
         for (History history : histories) {
-            int correctCount = (int) history.getUserChoices().stream()
-                    .filter(UserChoice::isCorrect)
-                    .count();
+            Long userId = history.getUser().getId();
+            long attempt = userAttemptCount.getOrDefault(userId, 0L) + 1;
+            userAttemptCount.put(userId, attempt);
 
-            int totalQuestions = history.getExam().getQuestions().size();
+            int totalQuestions = history.getUserChoices() != null ? history.getUserChoices().size() : 0;
+            assert history.getUserChoices() != null;
+            int correct = (int) history.getUserChoices().stream().filter(UserChoice::isCorrect).count();
 
-            long attemptOrder = historyAttemptOrders.getOrDefault(history.getId(), 1);
-
-            result.add(new ExamSummaryHistoryResponse(
+            responses.add(new ExamSummaryHistoryResponse(
                     history.getUser().getUsername(),
-                    history.getExam().getTitle(),
+                    exam.getTitle(),
                     history.getScore(),
-                    correctCount,
+                    correct,
                     totalQuestions,
                     history.getTimeTaken(),
                     history.getFinishedAt(),
-                    attemptOrder
+                    attempt
             ));
         }
-        return result;
+
+        return responses;
     }
 
-    public RankResponse getUserRank(String roomCode) {
-        List<History> histories = historyRepository.findHistoriesByRoomCode(roomCode);
-        histories.sort(Comparator
-                .comparingDouble(History::getScore).reversed()
-                .thenComparing(History::getFinishedAt));
+    public List<Rank> getRoomRanking(String roomCode) {
+        Room room = roomService.findByCode(roomCode);
+        List<History> histories = historyRepository.findByRoomOrderByScoreDescTimeTakenAsc(room);
 
-        List<RankResponse.Rank> rankings = new ArrayList<>();
+        List<Rank> ranks = new ArrayList<>();
+
         for (int i = 0; i < histories.size(); i++) {
-            History h = histories.get(i);
-            rankings.add(new RankResponse.Rank(h.getUser().getUsername(), i + 1));
-        }
+            History history = histories.get(i);
+            User user = history.getUser();
 
-        return new RankResponse(histories.size(), rankings);
+            ranks.add(new Rank(
+                    i + 1,
+                    history.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getAvatar(),
+                    history.getScore(),
+                    history.getTimeTaken()
+            ));
+        }
+        return ranks;
     }
 }

@@ -41,11 +41,12 @@ public class Question {
     @JsonIgnore
     private List<Exam> exams;
 
+    private String image; // Thêm trường để lưu đường dẫn ảnh
+
     public List<Long> getCorrectAnswerIds() {
         return this.getAnswers().stream()
                 .filter(Answer::getCorrect)
                 .map(Answer::getId)
                 .collect(Collectors.toList());
     }
-
 }

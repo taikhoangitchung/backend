@@ -14,6 +14,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -37,13 +40,7 @@ public class SecurityConfig {
                                 "/media/**",
                                 "/email/send",
                                 "/email/send-code",
-                                "/categories",
-                                "/questions/**",
-                                "/exams",
-                                "/exams/is-exists/**",
-                                "/difficulties",
                                 "/users/check-token/**",
-                                "/users/**",
                                 "/users/recover-password",
                                 "/users/check-duplicate",
                                 "/login/oauth2/code/**",
@@ -55,8 +52,11 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(user -> user.oidcUserService(oAuth2UserService))
                         .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler((request, response, exception) -> {
+                            String errorMessage = URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
+                            response.sendRedirect("http://localhost:3000/login?error=" + errorMessage);
+                        })
                 )
-
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable);

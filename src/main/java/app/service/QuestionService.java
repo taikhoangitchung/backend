@@ -127,10 +127,11 @@ public class QuestionService {
                 boolean correct = Boolean.parseBoolean(row.getCell(6).toString().trim());
 
                 Category category = Optional.ofNullable(categoryRepository.findByName(categoryName))
-                        .orElseGet(() -> categoryRepository.findById(0L).orElse(null));
+                        .orElseThrow(() -> new NotFoundException(messageHelper.get("category.not.found")));
                 Difficulty difficulty = Optional.ofNullable(difficultyRepository.findByName(difficultyName))
-                        .orElseGet(() -> difficultyRepository.findById(0L).orElse(null));
-                Type type = typeRepository.findByName(typeName);
+                        .orElseThrow(() -> new NotFoundException(messageHelper.get("difficulty.not.found")));
+                Type type = Optional.ofNullable(typeRepository.findByName(typeName))
+                        .orElseThrow(() -> new NotFoundException(messageHelper.get("type.not.found")));;
 
                 if (!questionMap.containsKey(id)) {
                     Question question = new Question();

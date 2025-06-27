@@ -30,6 +30,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import static org.springframework.data.domain.ExampleMatcher.GenericPropertyMatchers.endsWith;
+
 @Service
 @RequiredArgsConstructor
 public class QuestionService {
@@ -99,8 +101,10 @@ public class QuestionService {
     public void addAllQuestionFromExcel(MultipartFile file, long userId) {
         Map<Long, Question> questionMap = new LinkedHashMap<>();
 
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty() || file.getOriginalFilename() == null) {
             throw new NotFoundException(messageHelper.get("file.not.found"));
+        } else if (file.getOriginalFilename().endsWith(".xlsx")) {
+            throw new NotFoundException(messageHelper.get("invalid.file.extension"));
         }
 
         User user = userRepository.findById(userId)

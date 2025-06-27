@@ -11,8 +11,8 @@ import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,19 +68,16 @@ public class RoomService {
 
         User user = userService.findInAuth();
         boolean alreadyJoined = room.getCandidates().stream()
-                .anyMatch(foundUser -> foundUser.getId().equals(user.getId())) || user.getId().equals(room.getHost().getId());
+                .anyMatch(foundUser -> foundUser.getId().equals(user.getId()))
+                || user.getId().equals(room.getHost().getId());
         if (!alreadyJoined) {
             room.getCandidates().add(user);
             roomRepository.save(room);
         }
-        List<String> candidateNames = room.getCandidates().stream()
-                .map(User::getUsername)
-                .toList();
         return new RoomWaitingResponse(
                 room.getExam().getTitle(),
                 room.getExam().getAuthor().getUsername(),
-                room.getHost().getEmail(),
-                candidateNames
+                room.getHost().getEmail()
         );
     }
 

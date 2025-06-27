@@ -103,7 +103,7 @@ public class QuestionService {
 
         if (file == null || file.isEmpty() || file.getOriginalFilename() == null) {
             throw new NotFoundException(messageHelper.get("file.not.found"));
-        } else if (file.getOriginalFilename().endsWith(".xlsx")) {
+        } else if (!file.getOriginalFilename().endsWith(".xlsx")) {
             throw new NotFoundException(messageHelper.get("invalid.file.extension"));
         }
 

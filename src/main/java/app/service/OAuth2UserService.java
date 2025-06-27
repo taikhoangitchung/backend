@@ -2,10 +2,11 @@ package app.service;
 
 import app.entity.User;
 import app.repository.UserRepository;
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,12 @@ public class OAuth2UserService extends OidcUserService {
                     newUser.setAvatar("/media/default-avatar.png");
                     return userRepository.save(newUser);
                 });
+
+        if (!user.isActive()) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("USER_BLOCKED", "Tài khoản của bạn đã bị khóa", null)
+            );
+        }
 
         // Tạo JWT và Refresh Token
         String accessToken = jwtService.generateToken(user);

@@ -41,7 +41,7 @@ public class Question {
     @JsonIgnore
     private List<Exam> exams;
 
-    private String image; // Thêm trường để lưu đường dẫn ảnh
+    private String image;
 
     public List<Long> getCorrectAnswerIds() {
         return this.getAnswers().stream()

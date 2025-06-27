@@ -15,7 +15,6 @@ public class Answer {
 
     private String content;
     private Boolean correct;
-    private String color;
 
     @ManyToOne
     @JoinColumn(nullable = false)

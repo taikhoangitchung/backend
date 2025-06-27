@@ -48,7 +48,7 @@ public class QuestionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editQuestion(@RequestBody EditQuestionRequest request, @PathVariable long id, @RequestParam(required = false) MultipartFile image) {
+    public ResponseEntity<?> editQuestion(@ModelAttribute EditQuestionRequest request, @PathVariable long id, @RequestParam(required = false) MultipartFile image) {
         try {
             questionService.update(request, id, image);
             return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("update.success"));

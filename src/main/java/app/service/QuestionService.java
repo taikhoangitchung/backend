@@ -1,22 +1,27 @@
 package app.service;
 
-import app.dto.question.AddQuestionRequest;
-import app.dto.question.EditQuestionRequest;
-import app.dto.question.FilterQuestionRequest;
-import app.dto.question.QuestionInfoResponse;
+import app.dto.question.*;
 import app.entity.*;
+import app.exception.ExcelImportException;
 import app.exception.LockedException;
 import app.exception.NotFoundException;
 import app.exception.UploadException;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,6 +29,8 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import static org.springframework.data.domain.ExampleMatcher.GenericPropertyMatchers.endsWith;
 
 @Service
 @RequiredArgsConstructor
@@ -89,6 +96,68 @@ public class QuestionService {
 
         questionRepository.save(question);
     }
+
+    @Transactional
+    public void addAllQuestionFromExcel(MultipartFile file, long userId) {
+        Map<Long, Question> questionMap = new LinkedHashMap<>();
+
+        if (file == null || file.isEmpty() || file.getOriginalFilename() == null) {
+            throw new NotFoundException(messageHelper.get("file.not.found"));
+        } else if (file.getOriginalFilename().endsWith(".xlsx")) {
+            throw new NotFoundException(messageHelper.get("invalid.file.extension"));
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+
+        try (InputStream fis = file.getInputStream()) {
+            Workbook workbook = new XSSFWorkbook(fis);
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null || row.getCell(0) == null || row.getCell(1) == null) continue;
+
+                long id = (long) row.getCell(0).getNumericCellValue();
+                String content = row.getCell(1).getStringCellValue().trim();
+                String categoryName = row.getCell(2).getStringCellValue().trim();
+                String difficultyName = row.getCell(3).getStringCellValue().trim();
+                String typeName = row.getCell(4).getStringCellValue().trim();
+                String contentAnswer = row.getCell(5).getStringCellValue().trim();
+                boolean correct = Boolean.parseBoolean(row.getCell(6).toString().trim());
+
+                Category category = Optional.ofNullable(categoryRepository.findByName(categoryName))
+                        .orElseGet(() -> categoryRepository.findById(0L).orElse(null));
+                Difficulty difficulty = Optional.ofNullable(difficultyRepository.findByName(difficultyName))
+                        .orElseGet(() -> difficultyRepository.findById(0L).orElse(null));
+                Type type = typeRepository.findByName(typeName);
+
+                if (!questionMap.containsKey(id)) {
+                    Question question = new Question();
+                    question.setContent(content);
+                    question.setCategory(category);
+                    question.setDifficulty(difficulty);
+                    question.setType(type);
+                    question.setUser(user);
+                    question.setExams(Collections.emptyList());
+                    question.setAnswers(new ArrayList<>());
+                    questionMap.put(id, question);
+                }
+
+                // Thêm answer
+                Answer answer = new Answer();
+                answer.setContent(contentAnswer);
+                answer.setCorrect(correct);
+                answer.setQuestion(questionMap.get(id));
+                questionMap.get(id).getAnswers().add(answer);
+            }
+
+            questionRepository.saveAll(new ArrayList<>(questionMap.values()));
+        } catch (Exception e) {
+            throw new ExcelImportException(e.getMessage() + " " + messageHelper.get("excel.import.error"));
+        }
+    }
+
 
     public List<QuestionInfoResponse> findByUserId(long userId) {
         if (!userRepository.existsById(userId)) {

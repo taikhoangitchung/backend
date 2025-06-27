@@ -30,6 +30,13 @@ public class QuestionController {
         return ResponseEntity.status(HttpStatus.OK).body(questionService.findByUserId(userId));
     }
 
+    @PostMapping("/import")
+    public ResponseEntity<?> importFromExcel(@RequestParam("file") MultipartFile file,
+                                             @RequestParam("userId") long userId) {
+        questionService.addAllQuestionFromExcel(file, userId);
+        return ResponseEntity.ok(messageHelper.get("excel.import.success"));
+    }
+
     @PostMapping("/filter")
     public ResponseEntity<?> filterByCategoryAndSource(@RequestBody FilterQuestionRequest request) {
         return ResponseEntity.status(HttpStatus.OK).body(questionService.findWithFilters(request));

@@ -55,6 +55,11 @@ dependencies {
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    //excel
+    implementation("org.apache.poi:poi-ooxml:5.4.0")
+    implementation("org.apache.poi:poi-ooxml-full:5.2.3")
+    implementation("org.apache.xmlbeans:xmlbeans:5.1.1")
 }
 
 tasks.withType<Test> {

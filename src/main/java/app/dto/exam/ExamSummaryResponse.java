@@ -15,4 +15,6 @@ public class ExamSummaryResponse {
     private int questionCount;
     private Difficulty difficulty;
     private long playedTimes;
+    private boolean isPublic;
+    private Long authorId;
 }

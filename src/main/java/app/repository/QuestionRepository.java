@@ -28,4 +28,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             @Param("currentUserId") Long currentUserId,
             @Param("username") String username
     );
+
+    List<Question> findAllByOrderByIdDesc();
 }

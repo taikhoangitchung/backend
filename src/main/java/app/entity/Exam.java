@@ -41,4 +41,6 @@ public class Exam {
     private long passScore;
 
     private long playedTimes;
+
+    private boolean isPublic;
 }

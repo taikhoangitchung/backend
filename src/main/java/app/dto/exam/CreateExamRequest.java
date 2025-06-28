@@ -16,4 +16,5 @@ public class CreateExamRequest {
     private long duration;
     private long passScore;
     private long playedTimes;
+    private Boolean isPublic;
 }

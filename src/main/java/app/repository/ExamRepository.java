@@ -10,4 +10,5 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
 
     boolean existsByTitle(String title);
     void deleteAllQuestionsById(long id);
+    List<Exam> findAllByOrderByIdDesc();
 }

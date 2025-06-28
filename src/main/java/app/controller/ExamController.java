@@ -17,7 +17,7 @@ public class ExamController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(examService.getById(id));
+        return ResponseEntity.ok(examService.findById(id));
     }
 
     @GetMapping("/{id}/play")
@@ -30,7 +30,7 @@ public class ExamController {
         return ResponseEntity.ok(examService.getToPlayByRoom(code));
     }
 
-    @GetMapping("/categories/{categoryId}/exams")
+    @GetMapping("/categories/{categoryId}")
     public ResponseEntity<?> getExamsByCategory(@PathVariable Long categoryId) {
         return ResponseEntity.ok(examService.getExamsByCategory(categoryId));
     }

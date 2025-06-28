@@ -53,7 +53,7 @@ public class QuestionService {
     private String adminUsername;
 
     public List<Question> getAll() {
-        return questionRepository.findAll();
+        return questionRepository.findAllByOrderByIdDesc();
     }
 
     @Transactional

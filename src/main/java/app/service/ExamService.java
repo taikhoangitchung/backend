@@ -24,16 +24,12 @@ public class ExamService {
     private final DifficultyRepository difficultyRepository;
     private final CategoryRepository categoryRepository;
 
-    public Exam getById(long examId) {
-        return examRepository.findById(examId).orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
-    }
-
     @Transactional
     public void createOrUpdateExam(CreateExamRequest request, long examId) {
         Exam exam = null;
 
         if (examId != -1) {
-            exam = examRepository.findById(examId).orElseThrow(() -> new NotFoundException(messageHelper.get("exam.not.found")));
+            exam = findById(examId);
             exam.getQuestions().clear();
         }
 
@@ -55,11 +51,12 @@ public class ExamService {
         exam.setDuration(request.getDuration());
         exam.setPassScore(request.getPassScore());
         exam.setPlayedTimes(0);
+        exam.setPublic(request.getIsPublic());
         examRepository.save(exam);
     }
 
     public List<Exam> getAll() {
-        return examRepository.findAll();
+        return examRepository.findAllByOrderByIdDesc();
     }
 
     public PlayExamResponse getToPlayById(Long id) {
@@ -74,15 +71,17 @@ public class ExamService {
 
     public List<ExamSummaryResponse> getExamsByCategory(Long categoryId) {
         List<Exam> exams = examRepository.findByCategoryId(categoryId);
-        return exams.stream().map(exam ->
-                new ExamSummaryResponse(
+        return exams.stream()
+                .map(exam -> new ExamSummaryResponse(
                         exam.getId(),
                         exam.getTitle(),
                         exam.getQuestions() != null ? exam.getQuestions().size() : 0,
                         exam.getDifficulty(),
-                        exam.getPlayedTimes()
-                )
-        ).toList();
+                        exam.getPlayedTimes(),
+                        exam.isPublic(),
+                        exam.getAuthor().getId()
+                ))
+                .toList();
     }
 
     public boolean existExam(String title) {

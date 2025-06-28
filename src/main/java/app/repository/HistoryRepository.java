@@ -17,4 +17,6 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
     List<History> findByExamOrderByUserIdAscFinishedAtAsc(Exam exam);
 
     List<History> findByRoomOrderByScoreDescTimeTakenAsc(Room room);
+
+    boolean existsByRoom(Room room);
 }

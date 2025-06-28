@@ -6,21 +6,25 @@ import app.entity.Room;
 import app.entity.User;
 import app.exception.LockedException;
 import app.exception.NotFoundException;
+import app.repository.HistoryRepository;
 import app.repository.RoomRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.security.SecureRandom;
 
 @Service
 @RequiredArgsConstructor
 public class RoomService {
     private final RoomRepository roomRepository;
+    private final HistoryRepository historyRepository;
     private final ExamService examService;
     private final UserService userService;
     private final MessageHelper messageHelper;
+    private static final String CHAR_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final int CODE_LENGTH = 5;
+    private static final SecureRandom random = new SecureRandom();
 
     public String createRoom(CreateRoomRequest request) {
         Room room = new Room();
@@ -54,7 +58,11 @@ public class RoomService {
     private String generateRoomCode() {
         String code;
         do {
-            code = UUID.randomUUID().toString().replace("-", "").substring(0, 4).toUpperCase();
+            StringBuilder sb = new StringBuilder(CODE_LENGTH);
+            for (int i = 0; i < CODE_LENGTH; i++) {
+                sb.append(CHAR_POOL.charAt(random.nextInt(CHAR_POOL.length())));
+            }
+            code = sb.toString();
         } while (roomRepository.existsByCode(code));
         return code;
     }
@@ -91,7 +99,14 @@ public class RoomService {
 
     public void leaveRoom(String code) {
         Room room = findByCode(code);
-        room.getCandidates().remove(userService.findInAuth());
-        roomRepository.save(room);
+        User currentUser = userService.findInAuth();
+        room.getCandidates().remove(currentUser);
+        boolean isHost = currentUser.getId().equals(room.getHost().getId());
+        boolean started = room.getStatus() == Room.Status.STARTED;
+        if (isHost && !historyRepository.existsByRoom(room) && !started) {
+            roomRepository.delete(room);
+        } else {
+            roomRepository.save(room);
+        }
     }
 }

@@ -24,33 +24,24 @@ public class ExamSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         String payload = message.getPayload();
-        System.out.println("Đã nhận " + payload);
-
         if (payload.startsWith("JOIN:")) {
             String[] parts = payload.split(":");
-            if (parts.length >= 4) {
+            if (parts.length >= 5) {
                 String roomId = parts[1];
                 String email = parts[2];
                 String username = parts[3];
-
+                boolean isHost = Boolean.parseBoolean(parts[4]);
                 rooms.computeIfAbsent(roomId, k -> ConcurrentHashMap.newKeySet()).add(session);
-
                 session.getAttributes().put("roomId", roomId);
                 session.getAttributes().put("email", email);
                 session.getAttributes().put("username", username);
-
+                session.getAttributes().put("host", isHost);
                 Set<WebSocketSession> roomSessions = rooms.get(roomId);
-
-                if (roomSessions.size() == 1) {
-                    session.getAttributes().put("host", true);
-                }
-
                 String hostEmail = roomSessions.stream()
                         .filter(s -> Boolean.TRUE.equals(s.getAttributes().get("host")))
                         .map(s -> (String) s.getAttributes().get("email"))
                         .findFirst()
                         .orElse(null);
-
                 String candidateList = roomSessions.stream()
                         .filter(s -> {
                             String e = (String) s.getAttributes().get("email");
@@ -116,20 +107,37 @@ public class ExamSocketHandler extends TextWebSocketHandler {
     private void checkAndBroadcastEnd(String roomId) {
         int submitted = submittedCount.getOrDefault(roomId, 0);
         int expected = submitExpectCount.getOrDefault(roomId, 0);
+
+        if (expected > 0) {
+            Set<WebSocketSession> roomSessions = rooms.getOrDefault(roomId, Collections.emptySet());
+            String hostEmail = roomSessions.stream()
+                    .filter(s -> Boolean.TRUE.equals(s.getAttributes().get("host")))
+                    .map(s -> (String) s.getAttributes().get("email"))
+                    .findFirst()
+                    .orElse(null);
+            long actualCandidateCount = roomSessions.stream()
+                    .map(s -> (String) s.getAttributes().get("email"))
+                    .filter(email -> email != null && !email.equals(hostEmail))
+                    .count();
+            expected = (int) actualCandidateCount;
+            submitExpectCount.put(roomId, expected);
+        }
         if (submitted >= expected && expected > 0) {
             try {
                 broadcast(roomId, """
-                            {
-                                "type": "END"
-                            }
-                        """);
+                        {
+                            "type": "END"
+                        }
+                    """);
                 submittedCount.remove(roomId);
                 submitExpectCount.remove(roomId);
+                submittedUsersByRoom.remove(roomId);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
+
 
     private void broadcast(String roomId, String message) throws Exception {
         Set<WebSocketSession> sessions = rooms.get(roomId);
@@ -152,12 +160,22 @@ public class ExamSocketHandler extends TextWebSocketHandler {
             Set<WebSocketSession> room = rooms.get(roomId);
             if (room != null) {
                 room.remove(session);
-
                 String hostEmail = room.stream()
                         .filter(s -> Boolean.TRUE.equals(s.getAttributes().get("host")))
                         .map(s -> (String) s.getAttributes().get("email"))
                         .findFirst()
                         .orElse(null);
+
+                long actualCandidates = room.stream()
+                        .map(s -> (String) s.getAttributes().get("email"))
+                        .filter(e -> e != null && !e.equals(hostEmail))
+                        .count();
+
+                submitExpectCount.put(roomId, (int) actualCandidates);
+                List<Map<String, String>> submittedList = submittedUsersByRoom.get(roomId);
+                if (submittedList != null) {
+                    submittedList.removeIf(user -> email != null && email.equals(user.get("email")));
+                }
                 String candidateList = room.stream()
                         .filter(s -> {
                             String e = (String) s.getAttributes().get("email");
@@ -167,17 +185,19 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                         .filter(Objects::nonNull)
                         .map(name -> "\"" + name + "\"")
                         .collect(Collectors.joining(","));
+
                 String leaveMessage = String.format("""
-                            {
-                                "type": "LEAVE",
-                                "username": "%s",
-                                "email": "%s",
-                                "candidates": [%s]
-                            }
-                        """, username, email, candidateList);
+                        {
+                            "type": "LEAVE",
+                            "username": "%s",
+                            "email": "%s",
+                            "candidates": [%s]
+                        }
+                    """, username, email, candidateList);
 
                 try {
                     broadcast(roomId, leaveMessage);
+                    checkAndBroadcastEnd(roomId);
                 } catch (Exception e) {
                     System.err.println("❌ Failed to broadcast LEAVE message:");
                     e.printStackTrace();

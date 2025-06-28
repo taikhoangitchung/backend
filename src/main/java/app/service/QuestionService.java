@@ -17,10 +17,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,8 +30,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-
-import static org.springframework.data.domain.ExampleMatcher.GenericPropertyMatchers.endsWith;
 
 @Service
 @RequiredArgsConstructor
@@ -74,26 +73,30 @@ public class QuestionService {
 
         if (image != null && !image.isEmpty()) {
             try {
-                String fileName = image.getOriginalFilename();
-                if (fileName == null || fileName.trim().isEmpty()) {
+                String originalName = StringUtils.cleanPath(Objects.requireNonNull(image.getOriginalFilename()));
+                if (originalName.isBlank()) {
                     throw new UploadException(messageHelper.get("file.name.invalid"));
                 }
-                Path uploadPath = Paths.get(uploadDirectory, fileName);
-                if (Files.exists(uploadPath)) {
-                    String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-                    String fileExt = fileName.substring(fileName.lastIndexOf('.'));
-                    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-                    fileName = fileNameWithoutExt + "_" + timestamp + fileExt;
-                    uploadPath = Paths.get(uploadDirectory, fileName);
+
+                String contentType = image.getContentType();
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    throw new UploadException(messageHelper.get("image.type.invalid"));
                 }
-                Files.createDirectories(uploadPath.getParent());
-                Files.copy(image.getInputStream(), uploadPath);
-                question.setImage(urlPrefix + fileName);
+                String extension = originalName.substring(originalName.lastIndexOf("."));
+                String baseName = originalName.substring(0, originalName.lastIndexOf(".")).replaceAll("[^a-zA-Z0-9_-]", "");
+                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+                String safeFileName = baseName + "_" + timestamp + extension;
+
+                Path uploadPath = Paths.get(uploadDirectory);
+                Files.createDirectories(uploadPath);
+
+                Path destination = uploadPath.resolve(safeFileName);
+                Files.copy(image.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
+                question.setImage(urlPrefix + safeFileName);
             } catch (IOException e) {
                 throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
             }
         }
-
         questionRepository.save(question);
     }
 
@@ -152,7 +155,6 @@ public class QuestionService {
                 answer.setQuestion(questionMap.get(id));
                 questionMap.get(id).getAnswers().add(answer);
             }
-
             questionRepository.saveAll(new ArrayList<>(questionMap.values()));
         } catch (Exception e) {
             throw new ExcelImportException(e.getMessage() + " " + messageHelper.get("excel.import.error"));
@@ -193,7 +195,6 @@ public class QuestionService {
         if (!question.getExams().isEmpty()) {
             throw new LockedException(messageHelper.get("question.update.conflict"));
         }
-
         Category category = categoryRepository.findByName(request.getCategory());
         if (category == null) {
             throw new NotFoundException(messageHelper.get("category.not.found"));
@@ -222,26 +223,30 @@ public class QuestionService {
 
         if (image != null && !image.isEmpty()) {
             try {
-                String fileName = image.getOriginalFilename();
-                if (fileName == null || fileName.trim().isEmpty()) {
+                String originalName = StringUtils.cleanPath(Objects.requireNonNull(image.getOriginalFilename()));
+                if (originalName.isBlank()) {
                     throw new UploadException(messageHelper.get("file.name.invalid"));
                 }
-                Path uploadPath = Paths.get(uploadDirectory, fileName);
-                if (Files.exists(uploadPath)) {
-                    String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-                    String fileExt = fileName.substring(fileName.lastIndexOf('.'));
-                    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-                    fileName = fileNameWithoutExt + "_" + timestamp + fileExt;
-                    uploadPath = Paths.get(uploadDirectory, fileName);
+
+                String contentType = image.getContentType();
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    throw new UploadException(messageHelper.get("image.type.invalid"));
                 }
-                Files.createDirectories(uploadPath.getParent());
-                Files.copy(image.getInputStream(), uploadPath);
-                question.setImage(urlPrefix + fileName);
+                String extension = originalName.substring(originalName.lastIndexOf("."));
+                String baseName = originalName.substring(0, originalName.lastIndexOf(".")).replaceAll("[^a-zA-Z0-9_-]", "");
+                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+                String safeFileName = baseName + "_" + timestamp + extension;
+
+                Path uploadPath = Paths.get(uploadDirectory);
+                Files.createDirectories(uploadPath);
+
+                Path destination = uploadPath.resolve(safeFileName);
+                Files.copy(image.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
+                question.setImage(urlPrefix + safeFileName);
             } catch (IOException e) {
                 throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
             }
         }
-
         questionRepository.save(question);
     }
 
@@ -254,13 +259,12 @@ public class QuestionService {
 
         if (question.getImage() != null) {
             try {
-                Path path = Paths.get(uploadDirectory, "media", question.getImage().replace(urlPrefix, "").replaceFirst("/", ""));
+                Path path = Paths.get(uploadDirectory, question.getImage().replace(urlPrefix, "").replaceFirst("/", ""));
                 Files.deleteIfExists(path);
             } catch (IOException e) {
                 // Log error but continue deletion
             }
         }
-
         questionRepository.delete(question);
         answerRepository.deleteAll(question.getAnswers());
     }

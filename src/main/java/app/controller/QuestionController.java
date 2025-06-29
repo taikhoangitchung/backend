@@ -57,6 +57,12 @@ public class QuestionController {
         }
     }
 
+    @GetMapping("/{id}/edit")
+    public ResponseEntity<?> checkEditable(@PathVariable Long id){
+        questionService.ensureEditable(questionService.findById(id));
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping
     public ResponseEntity<?> createQuestion(@ModelAttribute AddQuestionRequest request, @RequestParam(required = false) MultipartFile image) {
         try {

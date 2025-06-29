@@ -1,5 +1,6 @@
 package app.controller;
 
+import app.dto.question.AddQuestionFromExcel;
 import app.dto.question.AddQuestionRequest;
 import app.dto.question.EditQuestionRequest;
 import app.dto.question.FilterQuestionRequest;
@@ -31,9 +32,8 @@ public class QuestionController {
     }
 
     @PostMapping("/import")
-    public ResponseEntity<?> importFromExcel(@RequestParam("file") MultipartFile file,
-                                             @RequestParam("userId") long userId) {
-        questionService.addAllQuestionFromExcel(file, userId);
+    public ResponseEntity<?> importFromExcel(@RequestBody AddQuestionFromExcel request) {
+        questionService.addAllQuestionFromExcel(request);
         return ResponseEntity.ok(messageHelper.get("excel.import.success"));
     }
 

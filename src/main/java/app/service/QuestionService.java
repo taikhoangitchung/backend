@@ -192,9 +192,6 @@ public class QuestionService {
     @Transactional
     public void update(EditQuestionRequest request, long id, MultipartFile image) throws IOException {
         Question question = findById(id);
-        if (!question.getExams().isEmpty()) {
-            throw new LockedException(messageHelper.get("question.update.conflict"));
-        }
         Category category = categoryRepository.findByName(request.getCategory());
         if (category == null) {
             throw new NotFoundException(messageHelper.get("category.not.found"));
@@ -221,7 +218,18 @@ public class QuestionService {
             question.getAnswers().add(item);
         }
 
-        if (image != null && !image.isEmpty()) {
+        if (image == null) {
+            if (question.getImage() != null) {
+                try {
+                    String oldImage = question.getImage().replace(urlPrefix, "").replaceFirst("^/", "");
+                    Path oldPath = Paths.get(uploadDirectory, oldImage);
+                    Files.deleteIfExists(oldPath);
+                } catch (IOException e) {
+                    throw new UploadException("Xoá ảnh cũ thất bại: " + e.getMessage());
+                }
+            }
+            question.setImage(null);
+        } else if (!image.isEmpty()) {
             try {
                 String originalName = StringUtils.cleanPath(Objects.requireNonNull(image.getOriginalFilename()));
                 if (originalName.isBlank()) {
@@ -276,5 +284,11 @@ public class QuestionService {
                 request.getCurrentUserId(),
                 request.getUsername()
         );
+    }
+
+    public void ensureEditable(Question question) {
+        if (!question.getExams().isEmpty()) {
+            throw new LockedException(messageHelper.get("question.update.conflict"));
+        }
     }
 }

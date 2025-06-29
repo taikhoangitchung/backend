@@ -63,7 +63,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping("/{userId}/block")
-    public ResponseEntity<?> blockUser(@PathVariable long userId) throws IOException{
+    public ResponseEntity<?> blockUser(@PathVariable long userId) throws IOException {
         String email = userService.blockUser(userId);
         kickUser.kickUser(email);
         return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("block.user.success"));
@@ -109,7 +109,8 @@ public class UserController {
     }
 
     @PatchMapping("/check-duplicate")
-    public ResponseEntity<?> checkDuplicatePassword(@RequestBody RecoverPasswordRequest request) {;
+    public ResponseEntity<?> checkDuplicatePassword(@RequestBody RecoverPasswordRequest request) {
+        ;
         boolean isDuplicate = userService.isDuplicatePassword(request);
         CheckDuplicatePasswordResponse duplicateResponse = new CheckDuplicatePasswordResponse();
         duplicateResponse.setDuplicate(isDuplicate);
@@ -125,5 +126,10 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response.get("error"));
         }
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/avatar")
+    public ResponseEntity<?> getAvatar() {
+        return ResponseEntity.ok().body(userService.findInAuth().getAvatar());
     }
 }

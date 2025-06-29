@@ -9,7 +9,9 @@ import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -40,8 +42,10 @@ public class HistoryService {
         history.setExam(exam);
         history.setRoom(room);
         history.setTimeTaken(request.getTimeTaken());
-        history.setFinishedAt(LocalDateTime.parse(request.getFinishedAt()));
-
+        String raw = request.getFinishedAt();
+        Instant utcInstant = Instant.parse(raw + "Z");
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(utcInstant, ZoneId.of("Asia/Ho_Chi_Minh"));
+        history.setFinishedAt(localDateTime);
         List<UserChoice> userChoices = request.getChoices().stream().map(submitted -> {
             Question question = questionService.findById(submitted.getQuestionId());
             UserChoice choice = new UserChoice();

@@ -112,11 +112,11 @@ public class QuestionService {
             if (difficulty == null) throw new NotFoundException(messageHelper.get("difficulty.not.found"));
             question.setDifficulty(difficulty);
 
-            Category category = categoryRepository.findByName(data.getDifficulty().trim());
+            Category category = categoryRepository.findByName(data.getCategory().trim());
             if (category == null) throw new NotFoundException(messageHelper.get("category.not.found"));
             question.setCategory(category);
 
-            Type type = typeRepository.findByName(data.getDifficulty().trim());
+            Type type = typeRepository.findByName(data.getType().trim());
             if (type == null) throw new NotFoundException(messageHelper.get("type.not.found"));
             question.setType(type);
 

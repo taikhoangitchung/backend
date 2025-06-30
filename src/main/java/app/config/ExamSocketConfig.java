@@ -21,7 +21,7 @@ public class ExamSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(examSocketHandler, "/ws/rooms")
-                .setAllowedOriginPatterns("*");
+                .setAllowedOrigins("*");
         registry.addHandler(kickWebSocketHandler, "/ws/kick")
                 .setAllowedOrigins("*");
     }

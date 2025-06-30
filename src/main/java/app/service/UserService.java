@@ -111,7 +111,7 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
 
-    public void register(RegisterRequest registerRequest) {
+    public String register(RegisterRequest registerRequest) {
         String username = registerRequest.getUsername();
         String email = registerRequest.getEmail();
         String password = registerRequest.getPassword();
@@ -134,6 +134,7 @@ public class UserService {
         user.setAvatar(defaultAvatar); // Gán avatar mặc định khi đăng ký
         user.setCreateAt(LocalDateTime.now()); // Thiết lập thời gian tạo
         userRepository.save(user);
+        return email;
     }
 
     public String login(LoginRequest loginRequest) {

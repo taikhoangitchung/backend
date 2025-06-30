@@ -18,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.Map;
 
-@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
@@ -28,10 +27,11 @@ public class UserController {
     private final KickWebSocketHandler kickUser;
     private final TokenService tokenService;
 
-    @GetMapping("/confirm")
-    public ResponseEntity<?> confirm(@RequestParam("email") String email) {
+    @PatchMapping("/confirm")
+    public ResponseEntity<?> confirmEmail(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
         userService.confirmEmail(email);
-        return ResponseEntity.ok(messageHelper.get("email.active.success"));
+        return ResponseEntity.ok("Xác nhận thành công");
     }
 
     @PostMapping("/register")
@@ -40,8 +40,7 @@ public class UserController {
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(BindingHandler.getErrorMessages(bindingResult));
         }
-        userService.register(registerRequest);
-        return ResponseEntity.ok(messageHelper.get("register.success"));
+        return ResponseEntity.ok().body(userService.register(registerRequest));
     }
 
     @PatchMapping("/login")

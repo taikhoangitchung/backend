@@ -2,10 +2,7 @@ package app.service;
 
 import app.dto.question.*;
 import app.entity.*;
-import app.exception.ExcelImportException;
-import app.exception.LockedException;
-import app.exception.NotFoundException;
-import app.exception.UploadException;
+import app.exception.*;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +27,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -109,9 +107,19 @@ public class QuestionService {
         request.getQuestions().forEach((data) -> {
             Question question = new Question();
             question.setContent(data.getContent());
-            question.setDifficulty(difficultyRepository.findByName(data.getDifficulty().trim()));
-            question.setCategory(categoryRepository.findByName(data.getCategory().trim()));
-            question.setType(typeRepository.findByName(data.getType()));
+
+            Difficulty difficulty = difficultyRepository.findByName(data.getDifficulty().trim());
+            if (difficulty == null) throw new NotFoundException(messageHelper.get("difficulty.not.found"));
+            question.setDifficulty(difficulty);
+
+            Category category = categoryRepository.findByName(data.getDifficulty().trim());
+            if (category == null) throw new NotFoundException(messageHelper.get("category.not.found"));
+            question.setCategory(category);
+
+            Type type = typeRepository.findByName(data.getDifficulty().trim());
+            if (type == null) throw new NotFoundException(messageHelper.get("type.not.found"));
+            question.setType(type);
+
             question.setUser(foundUser);
             question.setImage(null);
             question.setExams(new ArrayList<>());
@@ -126,6 +134,36 @@ public class QuestionService {
             });
 
             question.setAnswers(answers);
+
+            long correctCount = answers.stream().filter(Answer::getCorrect).count();
+
+            if (question.getType().getName().equals("multiple")) {
+                if (correctCount < 2) {
+                    throw new AnswerException(messageHelper.get("multiple.answer.invalid"));
+                }
+                if (answers.size() != 4) {
+                    throw new AnswerException(messageHelper.get("number.answer.invalid"));
+                }
+            }
+
+            if (question.getType().getName().equals("single")) {
+                if (correctCount > 1 || correctCount == 0) {
+                    throw new AnswerException(messageHelper.get("single.answer.invalid"));
+                }
+                if (answers.size() != 4) {
+                    throw new AnswerException(messageHelper.get("number.answer.invalid"));
+                }
+            }
+
+            if (question.getType().getName().equals("boolean")) {
+                if (answers.size() != 2) {
+                    throw new AnswerException(messageHelper.get("boolean.answer.invalid"));
+                }
+                if (correctCount != 1) {
+                    throw new AnswerException(messageHelper.get("boolean.answer.correct.invalid"));
+                }
+            }
+
             questions.add(question);
         });
 

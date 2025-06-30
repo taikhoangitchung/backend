@@ -62,4 +62,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> excelImportExceptionHandler(ExcelImportException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(AnswerException.class)
+    public ResponseEntity<?> answerExceptionHandler(AnswerException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

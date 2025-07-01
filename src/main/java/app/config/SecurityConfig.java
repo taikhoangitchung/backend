@@ -37,6 +37,7 @@ public class SecurityConfig {
                                 "/users/login",
                                 "/users/register",
                                 "/users/logout",
+                                "/users/confirm",
                                 "/media/**",
                                 "/email/send",
                                 "/email/send-code",

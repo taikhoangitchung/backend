@@ -45,6 +45,7 @@ public class SecurityConfig {
                                 "/users/check-duplicate",
                                 "/login/oauth2/code/**",
                                 "/users/refresh-token",
+                                "/users/confirm",
                                 "/ws/**"
                         ).permitAll()
                         .anyRequest().authenticated()

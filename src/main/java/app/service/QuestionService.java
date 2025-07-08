@@ -104,68 +104,72 @@ public class QuestionService {
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
 
         List<Question> questions = new ArrayList<>();
-        request.getQuestions().forEach((data) -> {
-            Question question = new Question();
-            question.setContent(data.getContent());
+        try {
+            request.getQuestions().forEach((data) -> {
+                Question question = new Question();
+                question.setContent(data.getContent());
 
-            Difficulty difficulty = difficultyRepository.findByName(data.getDifficulty().trim());
-            if (difficulty == null) throw new NotFoundException(messageHelper.get("difficulty.not.found"));
-            question.setDifficulty(difficulty);
+                Difficulty difficulty = difficultyRepository.findByName(data.getDifficulty().trim());
+                if (difficulty == null) throw new NotFoundException(messageHelper.get("difficulty.not.found"));
+                question.setDifficulty(difficulty);
 
-            Category category = categoryRepository.findByName(data.getCategory().trim());
-            if (category == null) throw new NotFoundException(messageHelper.get("category.not.found"));
-            question.setCategory(category);
+                Category category = categoryRepository.findByName(data.getCategory().trim());
+                if (category == null) throw new NotFoundException(messageHelper.get("category.not.found"));
+                question.setCategory(category);
 
-            Type type = typeRepository.findByName(data.getType().trim());
-            if (type == null) throw new NotFoundException(messageHelper.get("type.not.found"));
-            question.setType(type);
+                Type type = typeRepository.findByName(data.getType().trim());
+                if (type == null) throw new NotFoundException(messageHelper.get("type.not.found"));
+                question.setType(type);
 
-            question.setUser(foundUser);
-            question.setImage(null);
-            question.setExams(new ArrayList<>());
+                question.setUser(foundUser);
+                question.setImage(null);
+                question.setExams(new ArrayList<>());
 
-            List<Answer> answers = new ArrayList<>();
-            data.getAnswers().forEach((dataAnswer) -> {
-                Answer answer = new Answer();
-                answer.setContent(dataAnswer.getContent());
-                answer.setCorrect(dataAnswer.getCorrect());
-                answer.setQuestion(question);
-                answers.add(answer);
+                List<Answer> answers = new ArrayList<>();
+                data.getAnswers().forEach((dataAnswer) -> {
+                    Answer answer = new Answer();
+                    answer.setContent(dataAnswer.getContent());
+                    answer.setCorrect(dataAnswer.getCorrect());
+                    answer.setQuestion(question);
+                    answers.add(answer);
+                });
+
+                question.setAnswers(answers);
+
+                long correctCount = answers.stream().filter(Answer::getCorrect).count();
+
+                if (question.getType().getName().equals("multiple")) {
+                    if (correctCount < 2) {
+                        throw new AnswerException(messageHelper.get("multiple.answer.invalid"));
+                    }
+                    if (answers.size() != 4) {
+                        throw new AnswerException(messageHelper.get("number.answer.invalid"));
+                    }
+                }
+
+                if (question.getType().getName().equals("single")) {
+                    if (correctCount > 1 || correctCount == 0) {
+                        throw new AnswerException(messageHelper.get("single.answer.invalid"));
+                    }
+                    if (answers.size() != 4) {
+                        throw new AnswerException(messageHelper.get("number.answer.invalid"));
+                    }
+                }
+
+                if (question.getType().getName().equals("boolean")) {
+                    if (answers.size() != 2) {
+                        throw new AnswerException(messageHelper.get("boolean.answer.invalid"));
+                    }
+                    if (correctCount != 1) {
+                        throw new AnswerException(messageHelper.get("boolean.answer.correct.invalid"));
+                    }
+                }
+
+                questions.add(question);
             });
-
-            question.setAnswers(answers);
-
-            long correctCount = answers.stream().filter(Answer::getCorrect).count();
-
-            if (question.getType().getName().equals("multiple")) {
-                if (correctCount < 2) {
-                    throw new AnswerException(messageHelper.get("multiple.answer.invalid"));
-                }
-                if (answers.size() != 4) {
-                    throw new AnswerException(messageHelper.get("number.answer.invalid"));
-                }
-            }
-
-            if (question.getType().getName().equals("single")) {
-                if (correctCount > 1 || correctCount == 0) {
-                    throw new AnswerException(messageHelper.get("single.answer.invalid"));
-                }
-                if (answers.size() != 4) {
-                    throw new AnswerException(messageHelper.get("number.answer.invalid"));
-                }
-            }
-
-            if (question.getType().getName().equals("boolean")) {
-                if (answers.size() != 2) {
-                    throw new AnswerException(messageHelper.get("boolean.answer.invalid"));
-                }
-                if (correctCount != 1) {
-                    throw new AnswerException(messageHelper.get("boolean.answer.correct.invalid"));
-                }
-            }
-
-            questions.add(question);
-        });
+        } catch (Exception ex) {
+            throw new ExcelImportException(ex.getMessage());
+        }
 
         questionRepository.saveAll(questions);
     }

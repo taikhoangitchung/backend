@@ -4,6 +4,8 @@ import app.entity.Exam;
 import app.entity.History;
 import app.entity.Room;
 import app.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,9 +13,9 @@ import java.util.List;
 
 @Repository
 public interface HistoryRepository extends JpaRepository<History, Long> {
-    List<History> findByUserIdOrderByFinishedAtDesc(Long userId);
+    Page<History> findByUserIdOrderByFinishedAtDesc(Long userId, Pageable pageable); // Thay List bằng Page
 
-    List<History> findHistoriesByRoom_HostOrderByFinishedAtDesc(User roomHost);
+    Page<History> findHistoriesByRoom_HostOrderByFinishedAtDesc(User roomHost, Pageable pageable); // Thay List bằng Page
 
     List<History> findByRoomOrderByScoreDesc(Room room);
 

@@ -52,12 +52,14 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                         .map(s -> {
                             String name = (String) s.getAttributes().get("username");
                             String avatarUrl = (String) s.getAttributes().get("avatar");
+                            String mail = (String) s.getAttributes().get("email");
                             return String.format("""
                                         {
                                             "username": "%s",
-                                            "avatar": "%s"
+                                            "avatar": "%s",
+                                            "email": "%s"
                                         }
-                                    """, name, avatarUrl);
+                                    """, name, avatarUrl, mail);
                         })
                         .collect(Collectors.joining(","));
                 String response = String.format("""
@@ -110,6 +112,32 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                         """, new ObjectMapper().writeValueAsString(submittedList)));
                 checkAndBroadcastEnd(roomId);
             }
+        } else if (payload.startsWith("KICK:")) {
+            String[] parts = payload.split(":");
+            if (parts.length >= 3) {
+                String roomId = parts[1];
+                String kickEmail = parts[2];
+                Set<WebSocketSession> room = rooms.get(roomId);
+                if (room != null) {
+                    Optional<WebSocketSession> targetSession = room.stream()
+                            .filter(s -> kickEmail.equals(s.getAttributes().get("email")))
+                            .findFirst();
+                    targetSession.ifPresent(sessionToKick -> {
+                        try {
+                            sessionToKick.sendMessage(new TextMessage("""
+                                        {
+                                            "type": "KICK"
+                                        }
+                                    """));
+                            Thread.sleep(100);
+                            sessionToKick.close();
+                            handleSessionLeave(sessionToKick);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+                }
+            }
         }
     }
 
@@ -145,6 +173,10 @@ public class ExamSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        handleSessionLeave(session);
+    }
+
+    private void handleSessionLeave(WebSocketSession session) {
         String roomId = (String) session.getAttributes().get("roomId");
         String email = (String) session.getAttributes().get("email");
         String username = (String) session.getAttributes().get("username");
@@ -153,11 +185,13 @@ public class ExamSocketHandler extends TextWebSocketHandler {
             Set<WebSocketSession> room = rooms.get(roomId);
             if (room != null) {
                 room.remove(session);
+
                 String hostEmail = room.stream()
                         .filter(s -> Boolean.TRUE.equals(s.getAttributes().get("host")))
                         .map(s -> (String) s.getAttributes().get("email"))
                         .findFirst()
                         .orElse(null);
+
                 boolean started = submitExpectCount.containsKey(roomId);
                 if (started) {
                     new Timer().schedule(new TimerTask() {
@@ -171,14 +205,16 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                                 checkAndBroadcastEnd(roomId);
                             }
                         }
-                    }, 15000);
+                    }, 9999);
                 }
+
                 List<Map<String, String>> submittedList = submittedUsersByRoom.get(roomId);
                 boolean hasSubmitted = submittedList != null &&
                         submittedList.stream().anyMatch(user -> email != null && email.equals(user.get("email")));
                 if (!hasSubmitted && submittedList != null) {
                     submittedList.removeIf(user -> email != null && email.equals(user.get("email")));
                 }
+
                 String candidateList = room.stream()
                         .filter(s -> {
                             String e = (String) s.getAttributes().get("email");
@@ -195,6 +231,7 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                                     """, name, avatarUrl);
                         })
                         .collect(Collectors.joining(","));
+
                 String leaveMessage = String.format("""
                             {
                                 "type": "LEAVE",
@@ -203,6 +240,7 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                                 "candidates": [%s]
                             }
                         """, username, email, candidateList);
+
                 try {
                     broadcast(roomId, leaveMessage);
                     checkAndBroadcastEnd(roomId);

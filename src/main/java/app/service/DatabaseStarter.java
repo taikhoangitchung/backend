@@ -16,16 +16,16 @@ public class DatabaseStarter implements CommandLineRunner {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    @Value("${admin.username}")
+    @Value("${ADMIN_USERNAME}")
     private String adminUsername;
 
-    @Value("${admin.email}")
+    @Value("${ADMIN_EMAIL}")
     private String adminEmail;
 
-    @Value("${default.avatar}")
+    @Value("${DEFAULT_AVATAR}")
     private String defaultAvatar;
 
-    @Value("${admin.password}")
+    @Value("${ADMIN_PASSWORD}")
     private String adminPassword;
 
     @Override

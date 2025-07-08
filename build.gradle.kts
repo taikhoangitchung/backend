@@ -56,6 +56,16 @@ dependencies {
     implementation("org.apache.poi:poi-ooxml:5.4.0")
     implementation("org.apache.poi:poi-ooxml-full:5.2.3")
     implementation("org.apache.xmlbeans:xmlbeans:5.1.1")
+
+    // Environment: dotenv
+    implementation("io.github.cdimascio:dotenv-java:3.2.0")
+
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.0")
+    }
 }
 
 dependencyManagement {

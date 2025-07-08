@@ -38,3 +38,11 @@ out/
 
 ### YOUR_CLIENT
 application-secret.properties
+
+uploads/
+
+.env.dev
+.env.prod
+.env.test
+.env.local
+.env

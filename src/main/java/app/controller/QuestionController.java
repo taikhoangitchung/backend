@@ -1,9 +1,6 @@
 package app.controller;
 
-import app.dto.question.AddQuestionFromExcel;
-import app.dto.question.AddQuestionRequest;
-import app.dto.question.EditQuestionRequest;
-import app.dto.question.FilterQuestionRequest;
+import app.dto.question.*;
 import app.entity.Question;
 import app.service.QuestionService;
 import app.util.MessageHelper;
@@ -69,12 +66,16 @@ public class QuestionController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createQuestion(@ModelAttribute AddQuestionRequest request, @RequestParam(required = false) MultipartFile image) {
+    public ResponseEntity<?> createQuestion(
+            @RequestBody QuestionRequest request) {
+
         try {
-            questionService.addQuestion(request, image);
-            return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("question.create.success"));
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(messageHelper.get("upload.failed"));
+            questionService.storeQuestion(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(messageHelper.get("question.create.success"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
         }
     }
 

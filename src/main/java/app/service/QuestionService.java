@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -95,6 +96,40 @@ public class QuestionService {
                 throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
             }
         }
+        questionRepository.save(question);
+    }
+
+    @Transactional
+    public void storeQuestion(QuestionRequest request) {
+        Question question = new Question();
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User foundUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
+        question.setUser(foundUser);
+        question.setCategory(categoryRepository.findByName(request.getCategory()));
+        question.setType(typeRepository.findByName(request.getType()));
+        question.setDifficulty(difficultyRepository.findByName(request.getDifficulty()));
+        question.setContent(request.getContent());
+
+        // Gán ảnh từ Supabase (nếu có)
+        if (request.getImage() != null && !request.getImage().isBlank()) {
+            question.setImage(request.getImage());
+        }
+
+        // Map AnswerRequest → Answer
+        List<Answer> answerEntities = request.getAnswers().stream()
+                .map(dto -> {
+                    Answer answer = new Answer();
+                    answer.setContent(dto.getContent());
+                    answer.setCorrect(dto.isCorrect());
+                    answer.setQuestion(question); // quan hệ bidirectional
+                    return answer;
+                })
+                .collect(Collectors.toList());
+
+        question.setAnswers(answerEntities);
+
+        // Lưu vào DB
         questionRepository.save(question);
     }
 

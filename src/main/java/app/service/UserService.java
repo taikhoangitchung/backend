@@ -14,6 +14,8 @@ import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -35,6 +37,7 @@ public class UserService {
     private final TokenRepository tokenRepository;
     private final JwtService jwtService;
     private final TokenService tokenService;
+    private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
 
     @Value("${upload.directory}")
     private String uploadDirectory;
@@ -73,14 +76,14 @@ public class UserService {
     public boolean isDuplicatePassword(RecoverPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
-        return request.getPassword().equals(user.getPassword());
+        return passwordEncoder.matches(request.getPassword(), user.getPassword());
     }
 
     public void recoverPassword(RecoverPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
 
-        user.setPassword(request.getPassword());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
 
         deleteToken(request.getToken());
@@ -130,6 +133,7 @@ public class UserService {
         }
 
         User user = registerMapper.toEntity(registerRequest);
+        user.setPassword(passwordEncoder.encode(password)); // Hash password
         user.setActive(false);
         user.setAvatar(defaultAvatar); // Gán avatar mặc định khi đăng ký
         user.setCreateAt(LocalDateTime.now()); // Thiết lập thời gian tạo
@@ -151,7 +155,7 @@ public class UserService {
             throw new NotActiveException(messageHelper.get("not_active_account"));
         }
 
-        if (!password.equals(user.getPassword())) {
+        if (!passwordEncoder.matches(password, user.getPassword())) { // Kiểm tra hash
             throw new AuthException(messageHelper.get("password.incorrect"));
         }
 
@@ -164,15 +168,15 @@ public class UserService {
         User user = userRepository.findByEmail(changePasswordRequest.getEmail())
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
 
-        if (!changePasswordRequest.getOldPassword().equals(user.getPassword())) {
+        if (!passwordEncoder.matches(changePasswordRequest.getOldPassword(), user.getPassword())) {
             throw new NotMatchException(messageHelper.get("password.old.not.match"));
         }
 
-        if (changePasswordRequest.getNewPassword().equals(user.getPassword())) {
+        if (passwordEncoder.matches(changePasswordRequest.getNewPassword(), user.getPassword())) {
             throw new SameAsOldException(messageHelper.get("password.new.match.old"));
         }
 
-        user.setPassword(changePasswordRequest.getNewPassword());
+        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
         userRepository.save(user);
     }
 
@@ -204,7 +208,6 @@ public class UserService {
                 throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
             }
         } else {
-            // Giữ nguyên avatar hiện tại, không thay đổi nếu không có tệp mới
             if (user.getAvatar() == null) {
                 user.setAvatar(defaultAvatar); // Gán avatar mặc định nếu chưa có
             }
@@ -251,7 +254,7 @@ public class UserService {
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setUsername(username != null ? username : email);
-            newUser.setPassword(UUID.randomUUID().toString()); // ✅ Sinh mật khẩu giả
+            newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString())); // Hash mật khẩu giả
             newUser.setGoogleId(googleId);
             newUser.setActive(true);
             newUser.setCreateAt(LocalDateTime.now());
@@ -270,5 +273,4 @@ public class UserService {
         }
         return response;
     }
-
 }

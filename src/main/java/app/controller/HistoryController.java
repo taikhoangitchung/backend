@@ -1,6 +1,8 @@
 package app.controller;
 
 import app.dto.history.*;
+import app.entity.History;
+import app.entity.Room;
 import app.service.HistoryService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,16 @@ public class HistoryController {
     @GetMapping
     public ResponseEntity<List<MyHistoryResponse>> getHistory() {
         return ResponseEntity.ok(historyService.getAllMy());
+    }
+
+    @GetMapping("/room/{id}")
+    public ResponseEntity<Room> getRoomByHistoryId(@PathVariable Long id) {
+        return ResponseEntity.ok(historyService.getRoomByHistoryId(id));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<MyCreatedHistoryResponse>> getAllCreateByMe() {
+        return ResponseEntity.ok(historyService.getAllCreateByMe());
     }
 
     @GetMapping("/{id}")

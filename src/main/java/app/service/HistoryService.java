@@ -78,6 +78,39 @@ public class HistoryService {
         return responses;
     }
 
+    public Room getRoomByHistoryId(long id) {
+        Optional<History> history = historyRepository.findById(id);
+        if (history.isEmpty()) {
+            throw new NotFoundException(messageHelper.get("history.not.found"));
+        }
+        return history.get().getRoom();
+    }
+
+    public List<MyCreatedHistoryResponse> getAllCreateByMe() {
+        User foundUser = userService.findInAuth();
+        List<History> histories =  historyRepository.findHistoriesByRoom_HostOrderByFinishedAtDesc(foundUser);
+
+        Map<Long, Integer> examAttemptCounter = new HashMap<>();
+        List<MyCreatedHistoryResponse> responses = new ArrayList<>();
+        for (History history : histories) {
+            MyCreatedHistoryResponse createdHistory = new MyCreatedHistoryResponse();
+            createdHistory.setHistoryId(history.getId());
+            createdHistory.setExamTitle(history.getExam().getTitle());
+            createdHistory.setFinishedAt(history.getFinishedAt());
+            createdHistory.setTimeTaken(history.getTimeTaken());
+            createdHistory.setCountMembers(history.getRoom().getCandidates().size());
+
+            Long examId = history.getExam().getId();
+            int attemptTime = examAttemptCounter.getOrDefault(examId, 0) + 1;
+            examAttemptCounter.put(examId, attemptTime);
+            createdHistory.setAttemptTime(attemptTime);
+
+            responses.add(createdHistory);
+        }
+
+        return responses;
+    }
+
     public HistoryDetailResponse getDetailById(Long id) {
         History history = findById(id);
         User user = history.getUser();
@@ -148,7 +181,6 @@ public class HistoryService {
         }
         return -1;
     }
-
 
     public History findById(Long id) {
         return historyRepository.findById(id)

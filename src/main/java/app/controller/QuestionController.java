@@ -4,9 +4,12 @@ import app.dto.question.AddQuestionFromExcel;
 import app.dto.question.AddQuestionRequest;
 import app.dto.question.EditQuestionRequest;
 import app.dto.question.FilterQuestionRequest;
+import app.entity.Question;
 import app.service.QuestionService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +25,9 @@ public class QuestionController {
     private final MessageHelper messageHelper;
 
     @GetMapping
-    public ResponseEntity<?> getALl() {
-        return ResponseEntity.status(HttpStatus.OK).body(questionService.getAll());
+    public ResponseEntity<?> getAll(Pageable pageable) { // Thêm Pageable
+        Page<Question> questionPage = questionService.getAll(pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(questionPage);
     }
 
     @GetMapping("/user/{userId}")
@@ -38,8 +42,9 @@ public class QuestionController {
     }
 
     @PostMapping("/filter")
-    public ResponseEntity<?> filterByCategoryAndSource(@RequestBody FilterQuestionRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(questionService.findWithFilters(request));
+    public ResponseEntity<?> filterByCategoryAndSource(@RequestBody FilterQuestionRequest request, Pageable pageable) { // Thêm Pageable
+        Page<Question> questionPage = questionService.findWithFilters(request, pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(questionPage);
     }
 
     @GetMapping("/{id}")
@@ -58,7 +63,7 @@ public class QuestionController {
     }
 
     @GetMapping("/{id}/edit")
-    public ResponseEntity<?> checkEditable(@PathVariable Long id){
+    public ResponseEntity<?> checkEditable(@PathVariable Long id) {
         questionService.ensureEditable(questionService.findById(id));
         return ResponseEntity.ok().build();
     }

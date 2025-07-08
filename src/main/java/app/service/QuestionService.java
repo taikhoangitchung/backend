@@ -11,6 +11,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +28,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,8 +49,8 @@ public class QuestionService {
     @Value("${admin.username}")
     private String adminUsername;
 
-    public List<Question> getAll() {
-        return questionRepository.findAllByOrderByIdDesc();
+    public Page<Question> getAll(Pageable pageable) { // Thay List bằng Page
+        return questionRepository.findAllByOrderByIdDesc(pageable);
     }
 
     @Transactional
@@ -174,7 +174,6 @@ public class QuestionService {
         questionRepository.saveAll(questions);
     }
 
-
     public List<QuestionInfoResponse> findByUserId(long userId) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException(messageHelper.get("user.not.found"));
@@ -290,12 +289,13 @@ public class QuestionService {
         answerRepository.deleteAll(question.getAnswers());
     }
 
-    public List<Question> findWithFilters(FilterQuestionRequest request) {
+    public Page<Question> findWithFilters(FilterQuestionRequest request, Pageable pageable) { // Thay List bằng Page
         return questionRepository.findWithFilters(
                 request.getSourceId(),
                 request.getCategoryId(),
                 request.getCurrentUserId(),
-                request.getUsername()
+                request.getUsername(),
+                pageable
         );
     }
 

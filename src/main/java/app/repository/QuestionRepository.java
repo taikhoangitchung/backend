@@ -1,6 +1,8 @@
 package app.repository;
 
 import app.entity.Question;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,12 +24,13 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             ") " +
             "AND (:categoryId = -1 OR q.category.id = :categoryId) " +
             "AND (:username IS NULL OR :username = '' OR LOWER(q.user.username) LIKE LOWER(CONCAT('%', :username, '%')))")
-    List<Question> findWithFilters(
-            @Param("sourceId") Long sourceId,
-            @Param("categoryId") Long categoryId,
-            @Param("currentUserId") Long currentUserId,
-            @Param("username") String username
+    Page<Question> findWithFilters( // Thay List bằng Page
+                                    @Param("sourceId") Long sourceId,
+                                    @Param("categoryId") Long categoryId,
+                                    @Param("currentUserId") Long currentUserId,
+                                    @Param("username") String username,
+                                    Pageable pageable // Thêm Pageable
     );
 
-    List<Question> findAllByOrderByIdDesc();
+    Page<Question> findAllByOrderByIdDesc(Pageable pageable); // Thay List bằng Page
 }

@@ -1,4 +1,4 @@
-package quiz.entity;
+package app.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

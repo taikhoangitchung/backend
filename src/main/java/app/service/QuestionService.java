@@ -40,13 +40,13 @@ public class QuestionService {
     private final DifficultyRepository difficultyRepository;
     private final MessageHelper messageHelper;
 
-    @Value("${upload.directory}")
+    @Value("${APP_UPLOAD_DIR}")
     private String uploadDirectory;
 
-    @Value("${upload.url.prefix}")
+    @Value("${UPLOAD_URL_PREFIX}")
     private String urlPrefix;
 
-    @Value("${admin.username}")
+    @Value("${ADMIN_USERNAME}")
     private String adminUsername;
 
     public Page<Question> getAll(Pageable pageable) { // Thay List bằng Page

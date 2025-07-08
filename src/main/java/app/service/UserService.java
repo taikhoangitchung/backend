@@ -39,10 +39,10 @@ public class UserService {
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
 
-    @Value("${upload.directory}")
+    @Value("${APP_UPLOAD_DIR}")
     private String uploadDirectory;
 
-    @Value("${upload.url.prefix}")
+    @Value("${UPLOAD_URL_PREFIX}")
     private String urlPrefix;
 
     @Value("${default.avatar}")

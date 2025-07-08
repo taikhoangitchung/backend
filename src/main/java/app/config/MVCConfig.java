@@ -20,10 +20,10 @@ public class MVCConfig implements WebMvcConfigurer {
                 .allowCredentials(true);
     }
 
-    @Value("${upload.directory}")
+    @Value("${APP_UPLOAD_DIR}")
     private String uploadDirectory;
 
-    @Value("${upload.url.prefix}")
+    @Value("${UPLOAD_URL_PREFIX}")
     private String urlPrefix;
 
     @Override

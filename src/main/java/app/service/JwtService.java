@@ -17,10 +17,10 @@ import java.util.Date;
 public class JwtService {
     private final UserRepository userRepository;
 
-    @Value("${jwt.secret}")
+    @Value("${JWT_SECRET}")
     private String secretKey;
 
-    @Value("${jwt.expiration}")
+    @Value("${JWT_EXPIRATION}")
     private long jwtExpirationMs;
 
     public String generateToken(User user) {

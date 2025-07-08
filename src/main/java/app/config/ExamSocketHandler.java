@@ -57,7 +57,7 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                                         {
                                             "username": "%s",
                                             "avatar": "%s",
-                                            "email": "%s"
+                                             "email": "%s"
                                         }
                                     """, name, avatarUrl, mail);
                         })
@@ -251,4 +251,5 @@ public class ExamSocketHandler extends TextWebSocketHandler {
             }
         }
     }
+
 }

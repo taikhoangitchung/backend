@@ -4,6 +4,7 @@ import app.dto.exam.CreateExamRequest;
 import app.service.ExamService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,8 +43,8 @@ public class ExamController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll() {
-        return ResponseEntity.ok(examService.getAll());
+    public ResponseEntity<?> getAll(Pageable pageable) { // Thêm Pageable
+        return ResponseEntity.ok(examService.getAll(pageable));
     }
 
     @PostMapping
@@ -62,5 +63,4 @@ public class ExamController {
         examService.delete(id);
         return ResponseEntity.ok().body(messageHelper.get("delete.success"));
     }
-
 }

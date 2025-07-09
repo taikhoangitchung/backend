@@ -7,9 +7,6 @@ import app.mapper.HistoryMapper;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -66,16 +63,11 @@ public class HistoryService {
         return history.getId();
     }
 
-    public Page<MyHistoryResponse> getAllMy(Pageable pageable) {
+    public List<MyHistoryResponse> getAllMy() {
         User foundUser = userService.findInAuth();
-        if (foundUser == null) {
-            System.out.println("DEBUG: User not found in auth context at " + LocalDateTime.now());
-            throw new NotFoundException(messageHelper.get("user.not.found"));
-        }
-        Page<History> histories = historyRepository.findByUserIdOrderByFinishedAtDesc(foundUser.getId(), pageable);
+        List<History> histories = historyRepository.findByUserIdOrderByFinishedAtDesc(foundUser.getId());
         Map<Long, Integer> examAttemptCounter = new HashMap<>();
         List<MyHistoryResponse> responses = new ArrayList<>();
-
         for (History history : histories) {
             Long examId = history.getExam().getId();
             int attemptTime = examAttemptCounter.getOrDefault(examId, 0) + 1;
@@ -83,16 +75,23 @@ public class HistoryService {
             MyHistoryResponse response = HistoryMapper.toMyHistoryResponse(history, attemptTime);
             responses.add(response);
         }
-
-        return new PageImpl<>(responses, pageable, histories.getTotalElements());
+        return responses;
     }
 
-    public Page<MyCreatedHistoryResponse> getAllCreateByMe(Pageable pageable) {
+    public Room getRoomByHistoryId(long id) {
+        Optional<History> history = historyRepository.findById(id);
+        if (history.isEmpty()) {
+            throw new NotFoundException(messageHelper.get("history.not.found"));
+        }
+        return history.get().getRoom();
+    }
+
+    public List<MyCreatedHistoryResponse> getAllCreateByMe() {
         User foundUser = userService.findInAuth();
-        Page<History> histories = historyRepository.findHistoriesByRoom_HostOrderByFinishedAtDesc(foundUser, pageable);
+        List<History> histories =  historyRepository.findHistoriesByRoom_HostOrderByFinishedAtDesc(foundUser);
+
         Map<Long, Integer> examAttemptCounter = new HashMap<>();
         List<MyCreatedHistoryResponse> responses = new ArrayList<>();
-
         for (History history : histories) {
             MyCreatedHistoryResponse createdHistory = new MyCreatedHistoryResponse();
             createdHistory.setHistoryId(history.getId());
@@ -109,15 +108,7 @@ public class HistoryService {
             responses.add(createdHistory);
         }
 
-        return new PageImpl<>(responses, pageable, histories.getTotalElements());
-    }
-
-    public Room getRoomByHistoryId(long id) {
-        Optional<History> history = historyRepository.findById(id);
-        if (history.isEmpty()) {
-            throw new NotFoundException(messageHelper.get("history.not.found"));
-        }
-        return history.get().getRoom();
+        return responses;
     }
 
     public HistoryDetailResponse getDetailById(Long id) {

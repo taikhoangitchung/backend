@@ -6,6 +6,7 @@ import app.entity.Room;
 import app.service.HistoryService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,8 +25,10 @@ public class HistoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<MyHistoryResponse>> getHistory() {
-        return ResponseEntity.ok(historyService.getAllMy());
+    public ResponseEntity<Page<MyHistoryResponse>> getHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ResponseEntity.ok(historyService.getAllMy(page, size));
     }
 
     @GetMapping("/room/{id}")
@@ -34,8 +37,10 @@ public class HistoryController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<MyCreatedHistoryResponse>> getAllCreateByMe() {
-        return ResponseEntity.ok(historyService.getAllCreateByMe());
+    public ResponseEntity<Page<MyCreatedHistoryResponse>> getAllCreateByMe(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ResponseEntity.ok(historyService.getAllCreateByMe(page, size));
     }
 
     @GetMapping("/{id}")
@@ -49,8 +54,7 @@ public class HistoryController {
     }
 
     @GetMapping("/{roomCode}/rank")
-    public ResponseEntity<?> getRank(
-            @PathVariable String roomCode) {
+    public ResponseEntity<?> getRank(@PathVariable String roomCode) {
         return ResponseEntity.ok().body(historyService.getRoomRanking(roomCode));
     }
 }

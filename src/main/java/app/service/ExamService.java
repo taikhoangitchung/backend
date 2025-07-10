@@ -58,8 +58,62 @@ public class ExamService {
         examRepository.save(exam);
     }
 
-    public Page<Exam> getAll(Pageable pageable) { // Thay List bằng Page
+    public Page<Exam> getAll(Pageable pageable, Long categoryId, String searchTerm, String ownerFilter) {
+        // Xây dựng query động dựa trên các tham số
+        if (categoryId != null && searchTerm != null && !searchTerm.isEmpty() && ownerFilter != null) {
+            Long currentUserId = getCurrentUserId(); // Giả sử có phương thức lấy ID người dùng hiện tại
+            if ("mine".equals(ownerFilter)) {
+                return examRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndAuthorId(
+                        categoryId, searchTerm, currentUserId, pageable);
+            } else if ("others".equals(ownerFilter)) {
+                return examRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndAuthorIdNot(
+                        categoryId, searchTerm, currentUserId, pageable);
+            }
+            return examRepository.findByCategoryIdAndTitleContainingIgnoreCase(
+                    categoryId, searchTerm, pageable);
+        } else if (categoryId != null && searchTerm != null && !searchTerm.isEmpty()) {
+            return examRepository.findByCategoryIdAndTitleContainingIgnoreCase(
+                    categoryId, searchTerm, pageable);
+        } else if (categoryId != null && ownerFilter != null) {
+            Long currentUserId = getCurrentUserId();
+            if ("mine".equals(ownerFilter)) {
+                return examRepository.findByCategoryIdAndAuthorId(
+                        categoryId, currentUserId, pageable);
+            } else if ("others".equals(ownerFilter)) {
+                return examRepository.findByCategoryIdAndAuthorIdNot(
+                        categoryId, currentUserId, pageable);
+            }
+            return examRepository.findByCategoryId(categoryId, pageable);
+        } else if (searchTerm != null && !searchTerm.isEmpty() && ownerFilter != null) {
+            Long currentUserId = getCurrentUserId();
+            if ("mine".equals(ownerFilter)) {
+                return examRepository.findByTitleContainingIgnoreCaseAndAuthorId(
+                        searchTerm, currentUserId, pageable);
+            } else if ("others".equals(ownerFilter)) {
+                return examRepository.findByTitleContainingIgnoreCaseAndAuthorIdNot(
+                        searchTerm, currentUserId, pageable);
+            }
+            return examRepository.findByTitleContainingIgnoreCase(searchTerm, pageable);
+        } else if (categoryId != null) {
+            return examRepository.findByCategoryId(categoryId, pageable);
+        } else if (searchTerm != null && !searchTerm.isEmpty()) {
+            return examRepository.findByTitleContainingIgnoreCase(searchTerm, pageable);
+        } else if (ownerFilter != null) {
+            Long currentUserId = getCurrentUserId();
+            if ("mine".equals(ownerFilter)) {
+                return examRepository.findByAuthorId(currentUserId, pageable);
+            } else if ("others".equals(ownerFilter)) {
+                return examRepository.findByAuthorIdNot(currentUserId, pageable);
+            }
+        }
         return examRepository.findAllByOrderByIdDesc(pageable);
+    }
+
+    // Giả định phương thức lấy ID người dùng hiện tại (cần triển khai tùy theo auth)
+    private Long getCurrentUserId() {
+        // Ví dụ: Lấy từ SecurityContext hoặc context hiện tại
+        // Thay bằng logic thực tế của bạn (ví dụ: SecurityContextHolder.getContext().getAuthentication())
+        return 1L; // Placeholder, cần thay bằng logic thực tế
     }
 
     public PlayExamResponse getToPlayById(Long id) {

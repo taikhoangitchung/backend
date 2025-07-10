@@ -50,11 +50,12 @@ public class QuestionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editQuestion(@ModelAttribute EditQuestionRequest request, @PathVariable long id, @RequestParam(required = false) MultipartFile image) {
+    public ResponseEntity<?> editQuestion(@ModelAttribute QuestionRequest request,
+                                          @PathVariable long id) {
         try {
-            questionService.update(request, id, image);
+            questionService.updateQuestion(request, id);
             return ResponseEntity.status(HttpStatus.OK).body(messageHelper.get("update.success"));
-        } catch (IOException e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(messageHelper.get("upload.failed"));
         }
     }

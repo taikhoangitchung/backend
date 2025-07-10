@@ -7,6 +7,10 @@ import app.mapper.HistoryMapper;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -63,19 +67,34 @@ public class HistoryService {
         return history.getId();
     }
 
-    public List<MyHistoryResponse> getAllMy() {
+    public Page<MyHistoryResponse> getAllMy(int page, int size) {
         User foundUser = userService.findInAuth();
-        List<History> histories = historyRepository.findByUserIdOrderByFinishedAtDesc(foundUser.getId());
+
+        // Lấy tất cả lịch sử thi của người dùng theo thời gian tăng dần
+        List<History> allHistories = historyRepository.findByUserIdOrderByFinishedAtAsc(foundUser.getId());
+
+        // Map để đánh số lượt thi theo từng examId
         Map<Long, Integer> examAttemptCounter = new HashMap<>();
-        List<MyHistoryResponse> responses = new ArrayList<>();
-        for (History history : histories) {
+        List<MyHistoryResponse> allResponses = new ArrayList<>();
+
+        for (History history : allHistories) {
             Long examId = history.getExam().getId();
-            int attemptTime = examAttemptCounter.getOrDefault(examId, 0) + 1;
-            examAttemptCounter.put(examId, attemptTime);
-            MyHistoryResponse response = HistoryMapper.toMyHistoryResponse(history, attemptTime);
-            responses.add(response);
+            int attemptOrder = examAttemptCounter.getOrDefault(examId, 0) + 1;
+            examAttemptCounter.put(examId, attemptOrder);
+
+            MyHistoryResponse response = HistoryMapper.toMyHistoryResponse(history, attemptOrder);
+            allResponses.add(response);
         }
-        return responses;
+
+        // Sắp xếp theo thời gian giảm dần để hiển thị bài mới nhất trước
+        allResponses.sort(Comparator.comparing(MyHistoryResponse::getFinishedAt).reversed());
+
+        // Phân trang thủ công
+        int start = page * size;
+        int end = Math.min(start + size, allResponses.size());
+        List<MyHistoryResponse> paginated = allResponses.subList(start, end);
+
+        return new PageImpl<>(paginated, PageRequest.of(page, size), allResponses.size());
     }
 
     public Room getRoomByHistoryId(long id) {
@@ -86,29 +105,39 @@ public class HistoryService {
         return history.get().getRoom();
     }
 
-    public List<MyCreatedHistoryResponse> getAllCreateByMe() {
+    public Page<MyCreatedHistoryResponse> getAllCreateByMe(int page, int size) {
         User foundUser = userService.findInAuth();
-        List<History> histories =  historyRepository.findHistoriesByRoom_HostOrderByFinishedAtDesc(foundUser);
+        List<History> allHistories = historyRepository.findHistoriesByRoom_HostOrderByFinishedAtAsc(foundUser);
 
+        // Nhóm theo examId
         Map<Long, Integer> examAttemptCounter = new HashMap<>();
-        List<MyCreatedHistoryResponse> responses = new ArrayList<>();
-        for (History history : histories) {
-            MyCreatedHistoryResponse createdHistory = new MyCreatedHistoryResponse();
-            createdHistory.setHistoryId(history.getId());
-            createdHistory.setExamTitle(history.getExam().getTitle());
-            createdHistory.setFinishedAt(history.getFinishedAt());
-            createdHistory.setTimeTaken(history.getTimeTaken());
-            createdHistory.setCountMembers(history.getRoom().getCandidates().size());
+        List<MyCreatedHistoryResponse> allResponses = new ArrayList<>();
 
+        for (History history : allHistories) {
             Long examId = history.getExam().getId();
-            int attemptTime = examAttemptCounter.getOrDefault(examId, 0) + 1;
-            examAttemptCounter.put(examId, attemptTime);
-            createdHistory.setAttemptTime(attemptTime);
+            int attemptOrder = examAttemptCounter.getOrDefault(examId, 0) + 1;
+            examAttemptCounter.put(examId, attemptOrder);
 
-            responses.add(createdHistory);
+            MyCreatedHistoryResponse response = new MyCreatedHistoryResponse();
+            response.setHistoryId(history.getId());
+            response.setExamTitle(history.getExam().getTitle());
+            response.setFinishedAt(history.getFinishedAt());
+            response.setTimeTaken(history.getTimeTaken());
+            response.setCountMembers(history.getRoom().getCandidates().size());
+            response.setAttemptTime(attemptOrder);
+
+            allResponses.add(response);
         }
 
-        return responses;
+        // Sắp xếp thời gian giảm dần để giao diện hiển thị bài mới trước
+        allResponses.sort(Comparator.comparing(MyCreatedHistoryResponse::getFinishedAt).reversed());
+
+        // Bắt đầu phân trang
+        int start = page * size;
+        int end = Math.min(start + size, allResponses.size());
+        List<MyCreatedHistoryResponse> paginated = allResponses.subList(start, end);
+
+        return new PageImpl<>(paginated, PageRequest.of(page, size), allResponses.size());
     }
 
     public HistoryDetailResponse getDetailById(Long id) {

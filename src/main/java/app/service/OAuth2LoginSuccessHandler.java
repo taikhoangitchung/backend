@@ -1,9 +1,7 @@
 package app.service;
 
 import app.entity.User;
-import app.exception.AuthException;
 import app.repository.UserRepository;
-import app.util.MessageHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +11,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -34,9 +33,15 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String refreshToken = tokenService.createRefreshToken(user);
 
         // Redirect về frontend kèm theo token
-        String role = user.isAdmin() ? "ADMIN" : "USER";
-        String redirectUrl = "http://localhost:3000/" + (role.equals("ADMIN") ? "admin/dashboard" : "users/dashboard")
-                + "?accessToken=" + token + "&refreshToken=" + refreshToken;
+        String redirectUrl = buildRedirectUrl(user, token, refreshToken);
         response.sendRedirect(redirectUrl);
     }
+
+    private String buildRedirectUrl(User user, String accessToken, String refreshToken) {
+        String rolePath = user.isAdmin() ? "admin/dashboard" : "users/dashboard";
+        String clientUrl = Optional.ofNullable(System.getenv("CLIENT_URL"))
+                .orElse("http://localhost:3000/");
+        return clientUrl + rolePath + "?accessToken=" + accessToken + "&refreshToken=" + refreshToken;
+    }
+
 }

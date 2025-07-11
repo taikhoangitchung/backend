@@ -4,15 +4,55 @@ import app.entity.Exam;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
 public interface ExamRepository extends JpaRepository<Exam, Long> {
+    Page<Exam> findByCategoryId(Long categoryId, Pageable pageable);
+
+    Page<Exam> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+
+    Page<Exam> findByAuthorId(Long authorId, Pageable pageable);
+
+    Page<Exam> findByAuthorIdNot(Long authorId, Pageable pageable);
+
+    Page<Exam> findByCategoryIdAndTitleContainingIgnoreCase(Long categoryId, String title, Pageable pageable);
+
+    Page<Exam> findByCategoryIdAndAuthorId(Long categoryId, Long authorId, Pageable pageable);
+
+    Page<Exam> findByCategoryIdAndAuthorIdNot(Long categoryId, Long authorId, Pageable pageable);
+
+    Page<Exam> findByTitleContainingIgnoreCaseAndAuthorId(String title, Long authorId, Pageable pageable);
+
+    Page<Exam> findByTitleContainingIgnoreCaseAndAuthorIdNot(String title, Long authorId, Pageable pageable);
+
+    Page<Exam> findByCategoryIdAndTitleContainingIgnoreCaseAndAuthorId(Long categoryId, String title, Long authorId, Pageable pageable);
+
+    Page<Exam> findByCategoryIdAndTitleContainingIgnoreCaseAndAuthorIdNot(Long categoryId, String title, Long authorId, Pageable pageable);
+
+    Page<Exam> findAllByOrderByIdDesc(Pageable pageable);
+
     List<Exam> findByCategoryId(Long categoryId);
 
     boolean existsByTitle(String title);
 
     void deleteAllQuestionsById(long id);
 
-    Page<Exam> findAllByOrderByIdDesc(Pageable pageable); // Thay List bằng Page
+    @Query("SELECT e FROM Exam e " +
+            "WHERE (" +
+            "  (:sourceId = -999) OR " +
+            "  (:sourceId != -1 AND e.author.id = :sourceId) OR " +
+            "  (:sourceId = -1 AND e.author.id != :currentUserId)" +
+            ") " +
+            "AND (:categoryId = -1 OR e.category.id = :categoryId) " +
+            "AND (:title IS NULL OR :title = '' OR LOWER(e.title) LIKE LOWER(CONCAT('%', :title, '%')))")
+    Page<Exam> findWithFilters(
+            @Param("sourceId") Long sourceId,
+            @Param("categoryId") Long categoryId,
+            @Param("currentUserId") Long currentUserId,
+            @Param("title") String title,
+            Pageable pageable
+    );
 }

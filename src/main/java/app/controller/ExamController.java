@@ -43,8 +43,12 @@ public class ExamController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(Pageable pageable) { // Thêm Pageable
-        return ResponseEntity.ok(examService.getAll(pageable));
+    public ResponseEntity<?> getAll(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false, defaultValue = "all") String ownerFilter,
+            Pageable pageable) {
+        return ResponseEntity.ok(examService.getAll(pageable, categoryId, searchTerm, ownerFilter));
     }
 
     @PostMapping

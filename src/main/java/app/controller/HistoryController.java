@@ -1,17 +1,16 @@
 package app.controller;
 
-import app.dto.history.AddHistoryRequest;
-import app.dto.history.HistoryDetailResponse;
-import app.dto.history.MyCreatedHistoryResponse;
-import app.dto.history.MyHistoryResponse;
+import app.dto.history.*;
+import app.entity.History;
 import app.entity.Room;
 import app.service.HistoryService;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/histories")
@@ -26,18 +25,22 @@ public class HistoryController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<MyHistoryResponse>> getHistory(Pageable pageable) {
-        return ResponseEntity.ok(historyService.getAllMy(pageable));
-    }
-
-    @GetMapping("/my")
-    public ResponseEntity<Page<MyCreatedHistoryResponse>> getAllCreateByMe(Pageable pageable) {
-        return ResponseEntity.ok(historyService.getAllCreateByMe(pageable));
+    public ResponseEntity<Page<MyHistoryResponse>> getHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ResponseEntity.ok(historyService.getAllMy(page, size));
     }
 
     @GetMapping("/room/{id}")
     public ResponseEntity<Room> getRoomByHistoryId(@PathVariable Long id) {
         return ResponseEntity.ok(historyService.getRoomByHistoryId(id));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<Page<MyCreatedHistoryResponse>> getAllCreateByMe(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ResponseEntity.ok(historyService.getAllCreateByMe(page, size));
     }
 
     @GetMapping("/{id}")

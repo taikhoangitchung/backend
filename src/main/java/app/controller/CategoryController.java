@@ -1,11 +1,14 @@
 package app.controller;
 
 import app.dto.category.AddOrUpdateCategoryRequest;
+import app.dto.category.CategoryResponse;
 import app.service.CategoryService;
 import app.util.BindingHandler;
 import app.util.MessageHelper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,8 +34,11 @@ public class CategoryController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll() {
-        return ResponseEntity.ok().body(categoryService.getAllCategories());
+    public ResponseEntity<?> getAll(
+            @RequestParam(required = false) String searchTerm,
+            Pageable pageable) {
+        Page<CategoryResponse> categories = categoryService.getAllCategories(pageable, searchTerm);
+        return ResponseEntity.ok().body(categories);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")

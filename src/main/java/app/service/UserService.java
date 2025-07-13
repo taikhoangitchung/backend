@@ -1,9 +1,7 @@
 package app.service;
 
-import app.dto.user.ChangePasswordRequest;
-import app.dto.user.LoginRequest;
-import app.dto.user.RecoverPasswordRequest;
-import app.dto.user.RegisterRequest;
+import app.dto.profile.EditProfileRequest;
+import app.dto.user.*;
 import app.entity.Token;
 import app.entity.User;
 import app.exception.*;
@@ -180,51 +178,27 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void editProfile(String email, String username, MultipartFile avatarFile) {
-        User user = findByEmail(email);
-
-        if (username != null && !username.trim().isEmpty()) {
-            user.setUsername(username);
-        }
-
-        if (avatarFile != null && !avatarFile.isEmpty()) {
-            try {
-                String fileName = avatarFile.getOriginalFilename();
-                if (fileName == null || fileName.trim().isEmpty()) {
-                    throw new UploadException(messageHelper.get("file.name.invalid"));
-                }
-                Path uploadPath = Paths.get(uploadDirectory, fileName);
-                if (Files.exists(uploadPath)) {
-                    String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-                    String fileExt = fileName.substring(fileName.lastIndexOf('.'));
-                    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-                    fileName = fileNameWithoutExt + "_" + timestamp + fileExt;
-                    uploadPath = Paths.get(uploadDirectory, fileName);
-                }
-                Files.createDirectories(uploadPath.getParent());
-                Files.copy(avatarFile.getInputStream(), uploadPath);
-                user.setAvatar(urlPrefix + fileName);
-            } catch (IOException e) {
-                throw new UploadException(messageHelper.get("file.upload.error") + ": " + e.getMessage());
-            }
-        } else {
-            if (user.getAvatar() == null) {
-                user.setAvatar(defaultAvatar); // Gán avatar mặc định nếu chưa có
-            }
-        }
-
+    public void editProfile(EditProfileRequest request) {
+        User user = findByEmail(request.getEmail());
+        user.setUsername(request.getUsername());
+        user.setAvatar(request.getAvatar() != null ? request.getAvatar() : defaultAvatar);
         userRepository.save(user);
     }
 
-    public Map<String, Object> getProfile(String email) {
-        User user = userRepository.findByEmail(email)
+    public UserResponse getProfile(String email) {
+        User user =  userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
-        Map<String, Object> response = new HashMap<>();
-        response.put("username", user.getUsername());
-        response.put("avatar", user.getAvatar());
-        response.put("createdAt", user.getCreateAt());
-        response.put("active", user.isActive());
-        return response;
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .avatar(Optional.ofNullable(user.getAvatar()).orElse(defaultAvatar))
+                .role(user.isAdmin() ? "ADMIN" : "USER")
+                .active(user.isActive())
+                .isAdmin(user.isAdmin())
+                .createdAt(user.getCreateAt())
+                .googleId(user.getGoogleId())
+                .build();
     }
 
     public void unblockUser(long userId) {

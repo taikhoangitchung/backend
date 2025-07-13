@@ -23,4 +23,8 @@ public class RefreshToken {
 
     @Column(nullable = false)
     private LocalDateTime expiryDate;
+
+    public boolean isExpired() {
+        return expiryDate.isBefore(LocalDateTime.now());
+    }
 }

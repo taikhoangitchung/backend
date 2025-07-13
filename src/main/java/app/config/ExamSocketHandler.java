@@ -129,9 +129,7 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                                             "type": "KICK"
                                         }
                                     """));
-                            Thread.sleep(100);
                             sessionToKick.close();
-                            handleSessionLeave(sessionToKick);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -173,10 +171,6 @@ public class ExamSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        handleSessionLeave(session);
-    }
-
-    private void handleSessionLeave(WebSocketSession session) {
         String roomId = (String) session.getAttributes().get("roomId");
         String email = (String) session.getAttributes().get("email");
         String username = (String) session.getAttributes().get("username");
@@ -205,7 +199,7 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                                 checkAndBroadcastEnd(roomId);
                             }
                         }
-                    }, 9999);
+                    }, 5555);
                 }
 
                 List<Map<String, String>> submittedList = submittedUsersByRoom.get(roomId);
@@ -240,10 +234,8 @@ public class ExamSocketHandler extends TextWebSocketHandler {
                                 "candidates": [%s]
                             }
                         """, username, email, candidateList);
-
                 try {
                     broadcast(roomId, leaveMessage);
-                    checkAndBroadcastEnd(roomId);
                 } catch (Exception e) {
                     System.err.println("❌ Failed to broadcast LEAVE message:");
                     e.printStackTrace();

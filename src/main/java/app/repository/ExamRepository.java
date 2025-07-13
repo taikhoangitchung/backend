@@ -10,36 +10,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface ExamRepository extends JpaRepository<Exam, Long> {
-    Page<Exam> findByCategoryId(Long categoryId, Pageable pageable);
-
-    Page<Exam> findByTitleContainingIgnoreCase(String title, Pageable pageable);
-
-    Page<Exam> findByAuthorId(Long authorId, Pageable pageable);
-
-    Page<Exam> findByAuthorIdNot(Long authorId, Pageable pageable);
-
-    Page<Exam> findByCategoryIdAndTitleContainingIgnoreCase(Long categoryId, String title, Pageable pageable);
-
-    Page<Exam> findByCategoryIdAndAuthorId(Long categoryId, Long authorId, Pageable pageable);
-
-    Page<Exam> findByCategoryIdAndAuthorIdNot(Long categoryId, Long authorId, Pageable pageable);
-
-    Page<Exam> findByTitleContainingIgnoreCaseAndAuthorId(String title, Long authorId, Pageable pageable);
-
-    Page<Exam> findByTitleContainingIgnoreCaseAndAuthorIdNot(String title, Long authorId, Pageable pageable);
-
-    Page<Exam> findByCategoryIdAndTitleContainingIgnoreCaseAndAuthorId(Long categoryId, String title, Long authorId, Pageable pageable);
-
-    Page<Exam> findByCategoryIdAndTitleContainingIgnoreCaseAndAuthorIdNot(Long categoryId, String title, Long authorId, Pageable pageable);
-
-    Page<Exam> findAllByOrderByIdDesc(Pageable pageable);
-
-    List<Exam> findByCategoryId(Long categoryId);
-
-    boolean existsByTitle(String title);
-
-    void deleteAllQuestionsById(long id);
-
     @Query("SELECT e FROM Exam e " +
             "WHERE (" +
             "  (:sourceId = -999) OR " +
@@ -55,4 +25,10 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
             @Param("title") String title,
             Pageable pageable
     );
+
+    List<Exam> findByCategoryId(Long categoryId);
+
+    boolean existsByTitle(String title);
+
+    void deleteAllQuestionsById(long id);
 }

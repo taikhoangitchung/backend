@@ -10,6 +10,8 @@ import app.repository.CategoryRepository;
 import app.repository.QuestionRepository;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -40,19 +42,16 @@ public class CategoryService {
         return input.substring(0, 1).toUpperCase() + input.substring(1);
     }
 
-
-    public List<CategoryResponse> getAllCategories() {
-        return categoryRepository.findAll()
-                .stream()
-                .map(item -> {
-                    CategoryResponse response = new CategoryResponse();
-                    response.setId(item.getId());
-                    response.setName(item.getName());
-                    response.setDescription(item.getDescription());
-                    response.setQuestionCount(questionRepository.countByCategoryId(item.getId()));
-                    return response;
-                })
-                .toList();
+    public Page<CategoryResponse> getAllCategories(Pageable pageable, String searchTerm) {
+        Page<Category> categories = categoryRepository.findAllWithSearch(searchTerm, pageable);
+        return categories.map(item -> {
+            CategoryResponse response = new CategoryResponse();
+            response.setId(item.getId());
+            response.setName(item.getName());
+            response.setDescription(item.getDescription());
+            response.setQuestionCount(questionRepository.countByCategoryId(item.getId()));
+            return response;
+        });
     }
 
     public void deleteCategory(Long id) {
@@ -83,5 +82,4 @@ public class CategoryService {
         category.setDescription(request.getDescription());
         categoryRepository.save(category);
     }
-
 }

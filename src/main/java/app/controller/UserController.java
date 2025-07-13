@@ -1,6 +1,7 @@
 package app.controller;
 
 import app.config.KickWebSocketHandler;
+import app.dto.profile.EditProfileRequest;
 import app.dto.user.*;
 import app.service.TokenService;
 import app.service.UserService;
@@ -82,11 +83,8 @@ public class UserController {
     }
 
     @PatchMapping("/edit")
-    public ResponseEntity<?> editProfile(
-            @RequestParam("email") String email,
-            @RequestParam(value = "username", required = false) String username,
-            @RequestParam(value = "avatar", required = false) MultipartFile avatarFile) {
-        userService.editProfile(email, username, avatarFile);
+    public ResponseEntity<?> editProfile(@RequestBody EditProfileRequest request) throws IOException {
+        userService.editProfile(request);
         return ResponseEntity.ok(messageHelper.get("update.success"));
     }
 

@@ -116,7 +116,7 @@ public class ExamService {
         Room foundRoom = roomRepository.findByCode(code);
         Exam exam = foundRoom.getExam();
         return new PlayExamResponse(
-                exam.getDuration(),
+                foundRoom.getDuration(),
                 exam.getQuestions(),
                 foundRoom.getCandidates(),
                 foundRoom.getHost().getEmail()

@@ -1,8 +1,10 @@
 package app.controller;
 
 import app.dto.room.CreateRoomRequest;
+import app.dto.room.StartRoomRequest;
 import app.service.RoomService;
 import app.util.MessageHelper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,8 +38,8 @@ public class RoomController {
     }
 
     @PatchMapping("/{code}/start")
-    public ResponseEntity<?> startRoom(@PathVariable String code) {
-        roomService.startRoom(code);
+    public ResponseEntity<?> startRoom(@PathVariable String code, @Valid @RequestBody StartRoomRequest request) {
+        roomService.startRoom(code, request);
         return ResponseEntity.ok(messageHelper.get("room.started"));
     }
 }

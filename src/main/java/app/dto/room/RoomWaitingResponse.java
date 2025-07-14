@@ -11,4 +11,5 @@ public class RoomWaitingResponse {
     private String examTitle;
     private String authorName;
     private String hostEmail;
+    private long duration;
 }

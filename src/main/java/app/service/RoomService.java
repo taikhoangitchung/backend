@@ -2,6 +2,7 @@ package app.service;
 
 import app.dto.room.CreateRoomRequest;
 import app.dto.room.RoomWaitingResponse;
+import app.dto.room.StartRoomRequest;
 import app.entity.Room;
 import app.entity.User;
 import app.exception.LockedException;
@@ -44,7 +45,7 @@ public class RoomService {
         return room;
     }
 
-    public void startRoom(String code) {
+    public void startRoom(String code, StartRoomRequest request) {
         Room room = findByCode(code);
 
         if (room.getStatus() != Room.Status.WAITING) {
@@ -52,6 +53,7 @@ public class RoomService {
         }
 
         room.setStatus(Room.Status.STARTED);
+        room.setDuration(request.getDuration());
         roomRepository.save(room);
     }
 
@@ -85,7 +87,8 @@ public class RoomService {
         return new RoomWaitingResponse(
                 room.getExam().getTitle(),
                 room.getExam().getAuthor().getUsername(),
-                room.getHost().getEmail()
+                room.getHost().getEmail(),
+                room.getExam().getDuration()
         );
     }
 

@@ -4,17 +4,18 @@ import app.dto.exam.CreateExamRequest;
 import app.dto.exam.ExamSummaryResponse;
 import app.dto.exam.PlayExamResponse;
 import app.entity.*;
+import app.exception.LockedException;
 import app.exception.NotFoundException;
 import app.repository.*;
 import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,15 +59,23 @@ public class ExamService {
         examRepository.save(exam);
     }
 
-    public Page<Exam> getAll(Pageable pageable, Long categoryId, String searchTerm, String ownerFilter) {
-        Long currentUserId = getCurrentUserId();
+    public Page<Exam> getAll(Pageable pageable, Long categoryId, String searchTerm, String ownerFilter, Long currentUserId) {
         Long sourceId = "all".equals(ownerFilter) ? -999L : ("mine".equals(ownerFilter) ? currentUserId : -1L);
-        return examRepository.findWithFilters(sourceId, categoryId != null ? categoryId : -1L, currentUserId, searchTerm, pageable);
+        currentUserId = currentUserId != null ? currentUserId : getCurrentUserId();
+        if (currentUserId == null) {
+            throw new SecurityException("Không thể xác định người dùng hiện tại");
+        }
+        Page<Exam> exams = examRepository.findWithFilters(sourceId, categoryId, currentUserId, searchTerm, pageable);
+        return exams;
     }
 
     private Long getCurrentUserId() {
-        // Thay bằng logic thực tế (ví dụ: SecurityContextHolder.getContext().getAuthentication())
-        return 1L; // Placeholder, cần triển khai
+        try {
+            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            return user != null ? user.getId() : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public PlayExamResponse getToPlayById(Long id) {
@@ -115,6 +124,10 @@ public class ExamService {
     }
 
     public void delete(Long id) {
-        examRepository.deleteById(id);
+        Exam exam = findById(id);
+        if (!exam.getQuestions().isEmpty()) {
+            throw new LockedException(messageHelper.get("exam.delete.conflict"));
+        }
+        examRepository.delete(exam);
     }
 }

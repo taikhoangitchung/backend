@@ -16,13 +16,13 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
             "  (:sourceId != -1 AND e.author.id = :sourceId) OR " +
             "  (:sourceId = -1 AND e.author.id != :currentUserId)" +
             ") " +
-            "AND (:categoryId = -1 OR e.category.id = :categoryId) " +
-            "AND (:title IS NULL OR :title = '' OR LOWER(e.title) LIKE LOWER(CONCAT('%', :title, '%')))")
+            "AND (:categoryId IS NULL OR :categoryId = -1 OR e.category.id = :categoryId) " + // Sửa điều kiện categoryId
+            "AND (:searchTerm IS NULL OR :searchTerm = '' OR LOWER(e.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
     Page<Exam> findWithFilters(
             @Param("sourceId") Long sourceId,
             @Param("categoryId") Long categoryId,
             @Param("currentUserId") Long currentUserId,
-            @Param("title") String title,
+            @Param("searchTerm") String searchTerm,
             Pageable pageable
     );
 

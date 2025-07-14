@@ -34,6 +34,8 @@ public class Room {
     @Column(nullable = false)
     private Status status;
 
+    private long duration;
+
     public enum Status {
         WAITING,
         STARTED

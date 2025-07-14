@@ -12,18 +12,14 @@ import app.util.MessageHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -178,15 +174,32 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void editProfile(EditProfileRequest request) {
-        User user = findByEmail(request.getEmail());
+    public void editProfile(EditProfileRequest request, MultipartFile avatar) throws IOException {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
         user.setUsername(request.getUsername());
-        user.setAvatar(request.getAvatar() != null ? request.getAvatar() : defaultAvatar);
+
+        if (avatar != null && !avatar.isEmpty()) {
+            if (avatar.getSize() > 10 * 1024 * 1024) {
+                throw new IllegalArgumentException(messageHelper.get("file.size.exceeded"));
+            }
+            if (!avatar.getContentType().startsWith("image/")) {
+                throw new IllegalArgumentException(messageHelper.get("invalid.file.type"));
+            }
+            String fileName = System.currentTimeMillis() + "_" + avatar.getOriginalFilename();
+            Path filePath = Paths.get(uploadDirectory, fileName);
+            Files.createDirectories(filePath.getParent());
+            avatar.transferTo(filePath.toFile());
+            user.setAvatar(urlPrefix + fileName);
+        } else {
+            user.setAvatar(request.getAvatar() != null ? request.getAvatar() : defaultAvatar);
+        }
         userRepository.save(user);
     }
 
     public UserResponse getProfile(String email) {
-        User user =  userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException(messageHelper.get("user.not.found")));
         return UserResponse.builder()
                 .id(user.getId())

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -83,13 +84,16 @@ public class UserController {
     }
 
     @PatchMapping("/edit")
-    public ResponseEntity<?> editProfile(@RequestBody EditProfileRequest request) throws IOException {
-        userService.editProfile(request);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> editProfile(@RequestPart EditProfileRequest request, @RequestPart(required = false) MultipartFile avatar) throws IOException {
+        userService.editProfile(request, avatar);
         return ResponseEntity.ok(messageHelper.get("update.success"));
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<?> getProfile(@RequestParam("email") String email) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getProfile() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok().body(userService.getProfile(email));
     }
 

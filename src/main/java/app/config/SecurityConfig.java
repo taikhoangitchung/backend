@@ -33,7 +33,7 @@ public class SecurityConfig {
     private final OAuth2UserService oAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000}") // Mặc định nếu không có trong .env
+    @Value("${app.cors.allowed-origins:http://localhost:3000}")
     private String allowedOrigins;
 
     @Bean
@@ -77,7 +77,7 @@ public class SecurityConfig {
                                 "/users/confirm",
                                 "/ws/**"
                         ).permitAll()
-                        .requestMatchers("/exams/**", "/questions/**").authenticated()
+                        .requestMatchers("/exams/**", "/questions/**").authenticated() // Đảm bảo cả /exams và /questions
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

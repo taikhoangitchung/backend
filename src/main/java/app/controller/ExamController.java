@@ -18,7 +18,11 @@ public class ExamController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(examService.findById(id));
+        try {
+            return ResponseEntity.ok(examService.findById(id));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(messageHelper.get("exam.not.found"));
+        }
     }
 
     @GetMapping("/{id}/play")
@@ -47,14 +51,23 @@ public class ExamController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String searchTerm,
             @RequestParam(required = false, defaultValue = "all") String ownerFilter,
+            @RequestParam(required = false) Long currentUserId,
             Pageable pageable) {
-        return ResponseEntity.ok(examService.getAll(pageable, categoryId, searchTerm, ownerFilter));
+        try {
+            return ResponseEntity.ok(examService.getAll(pageable, categoryId, searchTerm, ownerFilter, currentUserId));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateExamRequest request) {
-        examService.createOrUpdateExam(request, -1);
-        return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("exam.create.success"));
+        try {
+            examService.createOrUpdateExam(request, -1);
+            return ResponseEntity.status(HttpStatus.CREATED).body(messageHelper.get("exam.create.success"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @GetMapping("/is-exists/{title}")

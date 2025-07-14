@@ -222,9 +222,17 @@ public class UserService {
 
         if (userOptional.isPresent()) {
             User existingUser = userOptional.get();
-            existingUser.setGoogleId(googleId);
-            userRepository.save(existingUser); // Chỉ update Google ID nếu cần
+            // Nếu user đã có googleId, kiểm tra và cập nhật nếu khác
+            if (existingUser.getGoogleId() != null && !existingUser.getGoogleId().equals(googleId)) {
+                throw new DuplicateException(messageHelper.get("google.account.linked.different"));
+            }
+            // Cập nhật googleId nếu chưa có hoặc giữ nguyên nếu đã có
+            if (existingUser.getGoogleId() == null) {
+                existingUser.setGoogleId(googleId);
+                userRepository.save(existingUser);
+            }
         } else {
+            // Tạo user mới nếu email chưa tồn tại
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setUsername(username != null ? username : email);
